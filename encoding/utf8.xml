@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<teiHeader>
+<fileDesc>
+  <titleStmt>
+	<title>L'AVARE, COMÉDIE</title>
+	<author academie="" born="1622" born_location="Paris" death="1673" death_location="Paris">MOLIÈRE</author>
+  </titleStmt>
+  <publicationStmt>
+	<p>publié par Paul FIEVRE</p>
+	<p>Septembre 2008</p>
+  </publicationStmt>
+  <sourceDesc>
+	<genre>Comédie</genre>
+	<inspiration>moeurs françaises</inspiration>
+	<type>prose</type>
+	<structure>Cinq actes</structure>
+	<periode>1661-1670</periode>
+	<taille>(mesure non pertinente)</taille>
+	<permalien/>
+	<sources>
+	  <source id="1">
+		<author>Plaute</author>
+		<text>La Marmitte (Aulularia)</text>
+	  </source>
+	</sources>
+  </sourceDesc>
+</fileDesc>
+</teiHeader>
