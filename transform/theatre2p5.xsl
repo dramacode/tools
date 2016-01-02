@@ -19,6 +19,7 @@
     </xsl:copy>
   </xsl:template>
   <xsl:template match="tei:TEI.2">
+    <xsl:processing-instruction name="xml-stylesheet">type="text/xsl" href="../Teinte/tei2html.xsl"</xsl:processing-instruction>
     <TEI>
       <xsl:apply-templates select="@*"/>
       <xsl:apply-templates/>
@@ -53,13 +54,37 @@
         <langUsage>
           <language ident="fr"/>
         </langUsage>
+        <textClass>
+          <keywords>
+            <term type="genre">
+              <xsl:variable name="genre">
+                <xsl:value-of select="/*/tei:teiHeader/tei:fileDesc/tei:SourceDesc/tei:genre"/>
+              </xsl:variable>
+              <xsl:choose>
+                <xsl:when test="$genre = 'Comédie'">
+                  <xsl:attribute name="subtype">comedy</xsl:attribute>
+                </xsl:when>
+                <xsl:when test="$genre = 'Tragedy'">
+                  <xsl:attribute name="subtype">tragedy</xsl:attribute>
+                </xsl:when>
+              </xsl:choose>
+              <xsl:value-of select="$genre"/>
+            </term>
+          </keywords>
+        </textClass>
       </profileDesc>
     </xsl:copy>
   </xsl:template>
   <xsl:template match="tei:SourceDesc">
     <sourceDesc>
       <xsl:apply-templates select="@*"/>
-      <xsl:apply-templates/>
+      <p>
+        <xsl:if test="tei:permalien != ''">
+          <ref target="{normalize-space(tei:permalien)}">
+            <xsl:value-of select="normalize-space(tei:permalien)"/>
+          </ref>
+        </xsl:if>
+      </p>
     </sourceDesc>
   </xsl:template>
   <xsl:template match="tei:publicationStmp">
@@ -71,6 +96,9 @@
   <xsl:template match="tei:div1">
     <xsl:copy>
       <xsl:apply-templates select="@*"/>
+      <xsl:if test="@type = 'acte'">
+        <xsl:attribute name="type">act</xsl:attribute>
+      </xsl:if>
       <xsl:attribute name="xml:id">
         <xsl:number format="I"/>
       </xsl:attribute>
@@ -150,10 +178,38 @@
 
   <!-- paragraphes à recompter après que le texte soit établi -->
   <xsl:template match="tei:p/@id | tei:s/@id"/>
-  <xsl:template match="tei:role/@id">
-    <xsl:attribute name="xml:id">
-      <xsl:value-of select="translate( ., $who1, $who2)"/>
-    </xsl:attribute>  
+  <xsl:template match="tei:role">
+    <xsl:variable name="rend">
+      <xsl:if test="@civil='M'"> male</xsl:if>
+      <xsl:if test="@civil='F'"> female</xsl:if>
+      <xsl:if test="@civil='G'"> group</xsl:if>
+      <xsl:if test="@age='J'"> junior</xsl:if>
+     <xsl:if test="@age='V'"> veteran</xsl:if>
+    </xsl:variable>
+    <xsl:copy>
+      <xsl:if test="@id">
+        <xsl:attribute name="xml:id">
+          <xsl:value-of select="translate( ., $who1, $who2)"/>
+        </xsl:attribute>
+      </xsl:if>
+      <xsl:copy-of select="@xml:id"/>
+      <xsl:if test="normalize-space($rend != '')">
+        <xsl:attribute name="rend">
+          <xsl:value-of select="normalize-space($rend)"/>
+        </xsl:attribute>
+      </xsl:if>
+      <xsl:copy-of select="@rend"/>
+      <xsl:choose>
+        <!-- Rôle en minuscules ou petites caps -->
+        <xsl:when test="not(*)">
+          <xsl:value-of select="substring(., 1, 1)"/>
+          <xsl:value-of select="translate(substring(., 2), $ABC, $abc)"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:apply-templates/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:copy>
   </xsl:template>
   <xsl:template match="@part">
     <xsl:attribute name="part">
