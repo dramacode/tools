@@ -17,7 +17,15 @@ class Dramabase {
   /** Processeur xslt */
   private $_xslt;
   /** Couleurs de nœuds */
-  public $color = array(
+  public $ncols = array(
+    "rgba(255, 0, 0, 0.8)",
+    "rgba(0, 0, 255, 0.8)",
+    "rgba(0, 128, 0, 0.8)",
+    "rgba(128, 0, 0, 0.8)",
+    "rgba(128, 0, 128, 0.8)",
+  );
+  /** Couleurs de liens */
+  public $ecols = array(
     "rgba(255, 0, 0, 0.5)",
     "rgba(0, 0, 255, 0.5)",
     "rgba(0, 128, 0, 0.5)",
@@ -99,12 +107,13 @@ class Dramabase {
       $x = cos($angle);
       $y = sin($angle);
       */
-      // position initiale en ligne verticale
-      $y = $i ;
-      $x = 1*(1-2*($i - 1) %2);
-      if (isset($this->color[$i-1])) {
-        $color[$data[$i][0]] = $this->color[$i-1];
-        $col = ", color: '".$this->color[$i-1]."'";
+      // position initiale en ligne
+      // $x = $i ; 
+      $y = 1;
+      $x = -$i*(1-2*($i%2));
+      if (isset($this->ncols[$i-1])) {
+        $color[$data[$i][0]] = $this->ecols[$i-1];
+        $col = ", color: '".$this->ncols[$i-1]."'";
       }
       echo "  {id:'".$data[$i][0]."', label:".json_encode($data[$i][1]).", size:".(0+$data[$i][2]).", x: $x, y: $y".$col."}";
       if ($i+1<count($data)) echo ',';
@@ -115,7 +124,7 @@ class Dramabase {
     for ($i=count($data)-1; $i>0; $i--) {
       $col = "";
       if (isset($color[$data[$i][0]])) $col = ", color: '".$color[$data[$i][0]]."'";
-      echo "  {id:'e".$i."', source:'".$data[$i][0]."', target:'".$data[$i][1]."', size:".$data[$i][2].$col.", type:['line', 'curve', 'arrow', 'curvedArrow'][3]}";
+      echo "  {id:'e".$i."', source:'".$data[$i][0]."', target:'".$data[$i][1]."', size:".$data[$i][2].$col.", type:'curvedArrow'}";
       echo ',';
       echo "\n";
     }
@@ -275,7 +284,7 @@ class Dramabase {
         ));
       }
       catch (Exception $e) {
-        echo "NOT UNIQUE ? ".$data[3]."\n".$e;
+        echo "\n\n      NOT UNIQUE ? ".$data[3]."\n".$e;
       }
     }
     $this->pdo->commit();

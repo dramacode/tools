@@ -1,6 +1,6 @@
 <?php
 if (isset($_REQUEST['play'])) $play = $_REQUEST['play'];
-else $play = 'moliere_1664_tartuffe';
+else $play = 'moliere_1669_tartuffe';
 include('Dramabase.php');
 $base = new Dramabase('basedrama.sqlite');
 
@@ -11,6 +11,7 @@ $base = new Dramabase('basedrama.sqlite');
     <title>Dramagraph</title>
     <script src="../sigma/sigma.min.js">//</script>
     <script src="../sigma/sigma.layout.forceAtlas2.min.js">//</script>
+    <script src="../sigma/sigma.plugins.dragNodes.min.js"></script>
     <style type="text/css">
 html, body { height: 100%; margin: 0;}
 #container {
@@ -23,7 +24,8 @@ html, body { height: 100%; margin: 0;}
     </style>
   </head>
   <body>
-    <div id="bar">
+
+    <div id="bar" style="position: absolute; z-index: 2; ">
       <form name="net">
         <select name="play" onchange="this.form.submit()">
           <?php
@@ -31,16 +33,20 @@ echo '<option></option>';
 foreach ($base->pdo->query("SELECT * FROM play ORDER BY code") as $row) {
   if ($row['code'] == $play) $selected=' selected="selected"';
   else $selected = "";
-  echo '<option value="'.$row['code'].'"'.$selected.'>'.$row['author'].', '.$row['title'];
-  echo ' ('.$row['acts'].(($row['acts']>2)?" actes":" acte").(($row['verse'])?" en vers":" en prose").")";
+  echo '<option value="'.$row['code'].'"'.$selected.'>'.$row['author'].', '.$row['title'].' (';
+  echo $row['year'].', ';
+  if ($row['genre'] == 'tragedy') echo 'tragédie, ';
+  if ($row['genre'] == 'comedy') echo 'comédie, ';
+  echo $row['acts'].(($row['acts']>2)?" actes":" acte").(($row['verse'])?", vers":", prose").")";
   echo "</option>\n";
 }
           ?>
         </select>
+        <button id="grav" type="button">Gravité</button>
+        <button id="mix" type="button">Mix</button>
       </form>
     </div>
     <div id="container">
-    <!-- <button id="mix">Remélanger</button> -->
     </div>
     <script>
      <?php
@@ -62,11 +68,15 @@ var s = new sigma({
     labelSize: "proportional",
     labelSizeRatio: 1,
     drawLabels: true,
-    sideMargin: 0.1,
+    sideMargin: 2,
     maxNodeSize: 40,
-    maxEdgeSize: 20,
+    maxEdgeSize: 25,
     minArrowSize: 10,
-    minNodeSize: 8
+    minNodeSize: 10,
+    borderSize: 2,
+    outerBorderSize: 3, // stroke size of active nodes
+    defaultNodeBorderColor: '#FFF',
+    defaultNodeOuterBorderColor: 'rgb(236, 81, 72)' // stroke color of active nodes
   }
 });
 
@@ -75,33 +85,49 @@ var slow = 1;
 var startForce = function() {
   s.startForceAtlas2({
     slowDown: slow,
-    // adjustSizes: true, // non, sauf avec gravité
-    // outboundAttractionDistribution: true, // ?
-    // edgeWeightInfluence: 1, // ??
-    barnesHutOptimize: false, // ?
-    gravity: 1.2, // instable si > 2
-    linLogMode: true, // stabilise masi cache des choses
+    // adjustSizes: true, // non, ralentit tout
+    // outboundAttractionDistribution: true, // non, éloigne Phèdre d’Œnone
+    // edgeWeightInfluence: 1, // ralentit tout, impossible de ramener Phèdre à Œnone
+    // barnesHutOptimize: false, // ?
+    // barnesHutTheta: 0.1,  // pas d’effet apparent sur si petit graphe
+    gravity: 0.7, // instable si > 2
+    // linLogMode: true, // non, ralentit trop
     worker: true, // on dit que c’est bien
   });
+  document.getElementById('grav').innerHTML = 'Stop';
 };
 // stop it after a few seconds
 var stopForce = function() {
-  setTimeout(function() { s.stopForceAtlas2(); }, 5000*slow);
+  setTimeout(function() { s.killForceAtlas2(); document.getElementById('grav').innerHTML = 'Start'; }, 5000*slow);
+  
 };
 startForce();
 stopForce();
-/* pas nécessaire
-document.getElementById('mix').addEventListener('click', function() {
+// Initialize the dragNodes plugin:
+var dragListener = sigma.plugins.dragNodes(s, s.renderers[0]);
+// button gravity
+document.getElementById('grav').addEventListener('click', function() {
   if ((s.supervisor || {}).running) {
     s.killForceAtlas2();
-    this.innerHTML = 'Remélanger';
+    this.innerHTML = 'Start';
   } 
   else {
     startForce();
-    this.innerHTML = 'Arrêter';
+    stopForce();
+    this.innerHTML = 'Stop';
   }
+  return false;
 });
-*/
+document.getElementById('mix').addEventListener('click', function() {
+  s.killForceAtlas2();
+  for (var i=0; i < s.graph.nodes().length; i++) {
+    s.graph.nodes()[i].x = Math.random();
+    s.graph.nodes()[i].y = Math.random();
+  }
+  s.refresh();
+  return false;
+});
+
     </script>
   </body>
 </html>

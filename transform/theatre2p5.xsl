@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.1"
-  xmlns="http://www.tei-c.org/ns/1.0"
-  xmlns:tei="http://www.tei-c.org/ns/1.0"
-  exclude-result-prefixes="tei"
-  >
+<xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.1" xmlns="http://www.tei-c.org/ns/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" exclude-result-prefixes="tei">
   <xsl:strip-space elements="tei:TEI tei:TEI.2 tei:body tei:castList tei:div tei:div1 tei:div2  tei:docDate tei:docImprint tei:docTitle tei:fileDesc tei:front tei:group tei:index tei:listWit tei:p tei:publicationStmp tei:publicationStmt tei:sourceDesc tei:SourceDesc tei:sources tei:sp tei:text tei:teiHeader tei:text tei:titleStmt"/>
   <xsl:output method="xml" encoding="UTF-8" indent="yes"/>
   <xsl:variable name="who1">ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöùúûüý’' </xsl:variable>
@@ -175,7 +171,6 @@
   <xsl:template match="tei:speaker/text()">
     <xsl:value-of select="translate(normalize-space(.), $ABC, $abc)"/>
   </xsl:template>
-
   <!-- paragraphes à recompter après que le texte soit établi -->
   <xsl:template match="tei:p/@id | tei:s/@id"/>
   <xsl:template match="tei:role">
@@ -184,7 +179,7 @@
       <xsl:if test="@civil='F'"> female</xsl:if>
       <xsl:if test="@civil='G'"> group</xsl:if>
       <xsl:if test="@age='J'"> junior</xsl:if>
-     <xsl:if test="@age='V'"> veteran</xsl:if>
+      <xsl:if test="@age='V'"> veteran</xsl:if>
     </xsl:variable>
     <xsl:copy>
       <xsl:if test="@id">
@@ -193,7 +188,7 @@
         </xsl:attribute>
       </xsl:if>
       <xsl:copy-of select="@xml:id"/>
-      <xsl:if test="normalize-space($rend != '')">
+      <xsl:if test="normalize-space($rend) != ''">
         <xsl:attribute name="rend">
           <xsl:value-of select="normalize-space($rend)"/>
         </xsl:attribute>
@@ -233,6 +228,12 @@
       <xsl:apply-templates/>
     </back>
   </xsl:template>
+  <xsl:template match="tei:p/@type[.='p']"/>
+  <xsl:template match="tei:front//tei:p[@type='v']">
+    <l>
+      <xsl:apply-templates/>
+    </l>
+  </xsl:template>
   <!-- vers numérotation OK -->
   <xsl:template match="tei:l/@id">
     <xsl:attribute name="n">
@@ -244,5 +245,20 @@
         <xsl:value-of select="."/>
       </xsl:attribute>
     </xsl:if>
+  </xsl:template>
+  <xsl:template match="tei:preface | tei:dedicace">
+    <div type="{local-name()}">
+      <xsl:apply-templates/>
+    </div>
+  </xsl:template>
+  <xsl:template match="tei:signature">
+    <signed>
+      <xsl:apply-templates/>
+    </signed>
+  </xsl:template>
+  <xsl:template match="tei:adresse">
+    <salute>
+      <xsl:apply-templates/>
+    </salute>
   </xsl:template>
 </xsl:transform>
