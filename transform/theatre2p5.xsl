@@ -246,7 +246,7 @@
       </xsl:attribute>
     </xsl:if>
   </xsl:template>
-  <xsl:template match="tei:preface | tei:dedicace">
+  <xsl:template match="tei:apostrophe | tei:front/tei:argument | tei:dedicace | tei:examen | tei:preface ">
     <div type="{local-name()}">
       <xsl:apply-templates/>
     </div>

@@ -18,18 +18,18 @@ class Dramabase {
   private $_xslt;
   /** Couleurs de nœuds */
   public $ncols = array(
-    "rgba(255, 0, 0, 0.8)",
-    "rgba(0, 0, 255, 0.8)",
-    "rgba(0, 128, 0, 0.8)",
-    "rgba(128, 0, 0, 0.8)",
-    "rgba(128, 0, 128, 0.8)",
+    "rgba(255, 0, 0, 0.7)",
+    "rgba(0, 0, 255, 0.7)",
+    "rgba(128, 0, 0, 0.7)",
+    "rgba(0, 0, 128, 0.7)",
+    "rgba(128, 0, 128, 0.7)",
   );
   /** Couleurs de liens */
   public $ecols = array(
     "rgba(255, 0, 0, 0.5)",
     "rgba(0, 0, 255, 0.5)",
-    "rgba(0, 128, 0, 0.5)",
     "rgba(128, 0, 0, 0.5)",
+    "rgba(0, 0, 128, 0.5)",
     "rgba(128, 0, 128, 0.5)",
   );
 
@@ -110,7 +110,8 @@ class Dramabase {
       // position initiale en ligne
       // $x = $i ; 
       $y = 1;
-      $x = -$i*(1-2*($i%2));
+      // $x = -$i*(1-2*($i%2));
+      $x=$i;
       if (isset($this->ncols[$i-1])) {
         $color[$data[$i][0]] = $this->ecols[$i-1];
         $col = ", color: '".$this->ncols[$i-1]."'";

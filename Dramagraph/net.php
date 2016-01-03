@@ -21,6 +21,7 @@ html, body { height: 100%; margin: 0;}
   min-height: 400px;
   margin: auto;
 }
+button { cursor: pointer; border: none; padding: none; font-size: 20px; font-family: sans-serif; }
     </style>
   </head>
   <body>
@@ -42,8 +43,9 @@ foreach ($base->pdo->query("SELECT * FROM play ORDER BY code") as $row) {
 }
           ?>
         </select>
-        <button id="grav" type="button">Gravité</button>
-        <button id="mix" type="button">Mix</button>
+        <button id="reload" type="submit">⟳</button>
+        <button id="mix" type="button">♻</button>
+        <button id="grav" type="button">►</button>
       </form>
     </div>
     <div id="container">
@@ -83,6 +85,7 @@ var s = new sigma({
 // Start the ForceAtlas2 algorithm:
 var slow = 1;
 var startForce = function() {
+  document.getElementById('grav').innerHTML = '◼';
   s.startForceAtlas2({
     slowDown: slow,
     // adjustSizes: true, // non, ralentit tout
@@ -94,11 +97,10 @@ var startForce = function() {
     // linLogMode: true, // non, ralentit trop
     worker: true, // on dit que c’est bien
   });
-  document.getElementById('grav').innerHTML = 'Stop';
 };
 // stop it after a few seconds
 var stopForce = function() {
-  setTimeout(function() { s.killForceAtlas2(); document.getElementById('grav').innerHTML = 'Start'; }, 5000*slow);
+  setTimeout(function() { s.killForceAtlas2(); document.getElementById('grav').innerHTML = '►'; }, 5000*slow);
   
 };
 startForce();
@@ -109,22 +111,26 @@ var dragListener = sigma.plugins.dragNodes(s, s.renderers[0]);
 document.getElementById('grav').addEventListener('click', function() {
   if ((s.supervisor || {}).running) {
     s.killForceAtlas2();
-    this.innerHTML = 'Start';
+    this.innerHTML = '►';
   } 
   else {
     startForce();
+    this.innerHTML = '◼';
     stopForce();
-    this.innerHTML = 'Stop';
+    
   }
   return false;
 });
 document.getElementById('mix').addEventListener('click', function() {
   s.killForceAtlas2();
+  document.getElementById('grav').innerHTML = '►';
   for (var i=0; i < s.graph.nodes().length; i++) {
-    s.graph.nodes()[i].x = Math.random();
-    s.graph.nodes()[i].y = Math.random();
+    s.graph.nodes()[i].x = Math.random()*10;
+    s.graph.nodes()[i].y = Math.random()*10;
   }
   s.refresh();
+  startForce();
+  stopForce();
   return false;
 });
 
