@@ -25,6 +25,7 @@ CREATE TABLE scene (
   play    TEXT,    -- code pièce
   act     TEXT,    -- code acte
   code    TEXT,    -- code scene
+  n       INTEGER,
   sp      INTEGER, -- <sp> taille en répliques
   l       INTEGER, -- <l> taille en vers
   w       INTEGER, -- <w> (word) taille en mots

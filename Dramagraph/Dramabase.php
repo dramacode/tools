@@ -49,8 +49,9 @@ class Dramabase {
     $this->_xpath = new DOMXpath($this->_dom);
     $this->_xpath->registerNamespace('tei', "http://www.tei-c.org/ns/1.0");
     $this->_xslt = new XSLTProcessor();
-
   }
+  
+ 
   /** Connexion à la base */
   private function connect($sqlite='basedrama.sqlite') {
     $sql = 'dramabase.sql';
@@ -91,6 +92,7 @@ class Dramabase {
     fclose($w);
     echo $f."\n";
   }
+
   public function sigma($play) {
     $color = array();
     echo "var g={ nodes: [\n";
@@ -132,26 +134,98 @@ class Dramabase {
     echo "]};\n";
   }
   /**
+   * Ligne bibliographique pour une pièce
+   */
+  public function bibl($play) {
+    if (is_string($play)) {
+      $playcode = $this->pdo->quote($playcode);
+      $play = $this->pdo->query("SELECT * FROM play WHERE code = $playcode")->fetch();
+    }
+    $bibl = $play['author'].', '.$play['title'].' ('.$play['year'];
+    if ($play['genre'] == 'tragedy') $bibl .= ', tragédie';
+    else if ($play['genre'] == 'comedy') $bibl .= ', comédie';
+    $bibl .= ', '.$play['acts'].(($play['acts']>2)?" actes":" acte");
+    $bibl .= ', '.(($play['verse'])?"vers":"prose");
+    $bibl .= ')';
+    return $bibl;
+  }
+  /**
+   * Table 
+   */
+  public function timetable($playcode, $max=null) {
+    $playcode = $this->pdo->quote($playcode);
+    $play = $this->pdo->query("SELECT * FROM play WHERE code = $playcode")->fetch();
+    // 1 pixel = 1000 caractères
+    if (!$max) $width = '';
+    if (is_numeric($max) && $max > 50) $width = ' width="'.round($play['c'] / (100000/$max)).'"';
+    else $width = ' width="'.$max.'"';
+    
+    echo '
+<table class="timetable" '.$width.'>
+  <caption>'.($this->bibl($play)).'</caption>
+';
+    // timeline des scènes ?
+    $actlast = null;
+    echo '  <tr class="scenes">'."\n";
+    // attention les pourcentages de la largeur sont comptés sans les noms de personnages
+    foreach ($this->pdo->query("SELECT * FROM scene WHERE play = $playcode") as $scene) {
+      $class = ' class="scene "';
+      if ($actlast != $scene['act']) $class .= " scene1";
+      $actlast = $scene['act'];
+      $width = number_format(100*($scene['c']/$play['c']), 1);
+      $n = 0+ preg_replace('/\D/', '', $scene['code']);
+      echo '    <td'.$class.' style="width: '.$width.'%;" title="Acte '.$scene['act'].', scène '.$n.'"/>'."\n";
+    }
+    echo "  </tr>\n";
+    
+    // requête sur le nombre de caractère d’un rôle dans une scène
+    $qsp = $this->pdo->prepare("SELECT sum(c) FROM sp WHERE play = $playcode AND scene = ? AND source = ?");
+    // Boucler sur les personnages, un par ligne
+    foreach ($this->pdo->query("SELECT * FROM role WHERE play = $playcode ORDER BY c DESC") as $role) {
+      echo '  <tr class="'.$role['code'].'">'."\n";
+      // boucler sur les scènes
+      $label = $role['label'];
+      foreach ($this->pdo->query("SELECT * FROM scene WHERE play = $playcode") as $scene) {
+        $class = "";
+        if ($actlast != $scene['act']) $class .= " scene1";
+        $actlast = $scene['act'];
+        $qsp->execute(array($scene['code'], $role['code']));
+        list($c) = $qsp->fetch();
+        $opacity = number_format($c / $scene['c'], 1);
+        if (trim($class)) $class = ' class="'.trim($class).'"';
+        $n = 0+ preg_replace('/\D/', '', $scene['code']);
+        echo '<td'.$class.' style="opacity: '.$opacity.'" title="'.$label.', acte '.$scene['act'].', scène '.$n.', '.round(100*$c / $scene['c']).'%"';
+        if (!$c) echo "/>\n";
+        else echo "> </td>\n";
+      }
+      echo '<th style="position: absolute; ">'.$label.'</td>';
+      echo '  </tr>'."\n";
+    }
+    echo '
+</table>
+';
+  }
+  /**
    * proprotion de parole par personnage
    */
   public function nodes($play) {
     $play = $this->pdo->quote($play);
     $data = array();
     $data[] = array('Id', 'Label', 'c', 'targets', 'color');
-    foreach ($this->pdo->query("SELECT * FROM role WHERE play = $play ORDER BY c DESC") as $row) {
-      if (!$row['love']) $color = '#CCCCCC';
-      else if ($row['sex'] == 1 && $row['age'] == 'junior') $color = "#00FFFF";
-      else if ($row['sex'] == 1 && $row['age'] == 'veteran') $color = "#0000FF";
-      else if ($row['sex'] == 1) $color = "#4080FF";
-      else if ($row['sex'] == 2 && $row['age'] == 'junior') $color = "#FFAAFF";
-      else if ($row['sex'] == 2 && $row['age'] == 'veteran') $color = "#800000";
-      else if ($row['sex'] == 2) $color = "#FF0000";
+    foreach ($this->pdo->query("SELECT * FROM role WHERE play = $play ORDER BY c DESC") as $role) {
+      if (!$role['love']) $color = '#CCCCCC';
+      else if ($role['sex'] == 1 && $role['age'] == 'junior') $color = "#00FFFF";
+      else if ($role['sex'] == 1 && $role['age'] == 'veteran') $color = "#0000FF";
+      else if ($role['sex'] == 1) $color = "#4080FF";
+      else if ($role['sex'] == 2 && $role['age'] == 'junior') $color = "#FFAAFF";
+      else if ($role['sex'] == 2 && $role['age'] == 'veteran') $color = "#800000";
+      else if ($role['sex'] == 2) $color = "#FF0000";
       else $color = '#CCCCCC';
       $data[] = array(
-        $row['code'],
-        $row['label'],
-        $row['c'],
-        $row['targets'],
+        $role['code'],
+        $role['label'],
+        $role['c'],
+        $role['targets'],
         $color,
       );
     }
@@ -165,11 +239,11 @@ class Dramabase {
     $q->execute(array($play));
     $data = array();
     $data[] = array('Source', 'Target', 'Weight');
-    while ($row = $q->fetch()) {
+    while ($sp = $q->fetch()) {
       $data[] = array(
-        $row['source'],
-        $row['target'],
-        $row['ord'],
+        $sp['source'],
+        $sp['target'],
+        $sp['ord'],
       );
     }
     return $data;
@@ -237,6 +311,8 @@ class Dramabase {
       preg_match('@ (cadet|junior|senior|veteran) @i', $rend, $matches);
       $age = @$matches[1];
       $love = preg_match('@ love @i', $rend);
+      // si pas de nom, inaffichable en réseau, ou erreur ?
+      if (!$label) continue;
       $q->execute(array(
         $playcode,
         $code,
