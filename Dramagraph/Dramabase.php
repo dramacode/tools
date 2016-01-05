@@ -97,10 +97,11 @@ class Dramabase {
     $color = array();
     echo "var g={ nodes: [\n";
     $data = $this->nodes($play);
+    // 'Id', 'Label', 'c', 'title', 'targets', 'color'
     $count = count($data) - 1;
     for ($i=1; $i<count($data); $i++) {
       // ne pas mettre les personnages non liés, écarte topr le réseau
-      if (!$data[$i][2]) continue;
+      if (!$data[$i][4]) continue;
       $col = "";
       /*
       // position initiale en cercle
@@ -118,7 +119,7 @@ class Dramabase {
         $color[$data[$i][0]] = $this->ecols[$i-1];
         $col = ", color: '".$this->ncols[$i-1]."'";
       }
-      echo "  {id:'".$data[$i][0]."', label:".json_encode($data[$i][1]).", size:".(0+$data[$i][2]).", x: $x, y: $y".$col."}";
+      echo "  {id:'".$data[$i][0]."', label:".json_encode($data[$i][1]).", size:".(0+$data[$i][2]).", x: $x, y: $y".$col.", title: ".json_encode($data[$i][3])."}";
       if ($i+1<count($data)) echo ',';
       echo "\n";
     }
@@ -198,7 +199,9 @@ class Dramabase {
         if (!$c) echo "/>\n";
         else echo "> </td>\n";
       }
-      echo '<th style="position: absolute; ">'.$label.'</td>';
+      $title='';
+      if ($role['title']) $title .= $role['title'].', '.round(100*$role['c'] / $play['c']).'%';
+      echo '<th style="position: absolute; " title="'.$title.'">'.$label.'</td>';
       echo '  </tr>'."\n";
     }
     echo '
@@ -211,7 +214,7 @@ class Dramabase {
   public function nodes($play) {
     $play = $this->pdo->quote($play);
     $data = array();
-    $data[] = array('Id', 'Label', 'c', 'targets', 'color');
+    $data[] = array('Id', 'Label', 'c', 'title', 'targets', 'color');
     foreach ($this->pdo->query("SELECT * FROM role WHERE play = $play ORDER BY c DESC") as $role) {
       if (!$role['love']) $color = '#CCCCCC';
       else if ($role['sex'] == 1 && $role['age'] == 'junior') $color = "#00FFFF";
@@ -225,6 +228,7 @@ class Dramabase {
         $role['code'],
         $role['label'],
         $role['c'],
+        ($role['title'])?$role['title']:'',
         $role['targets'],
         $color,
       );
@@ -235,11 +239,15 @@ class Dramabase {
    * Évolution de la parole selon les personnages
    */
   public function edges($play) {
+    $threshold = 0.01;
+    list($playc) = $this->pdo->query("SELECT c FROM play where code = ".$this->pdo->quote($play))->fetch();
     $q = $this->pdo->prepare("SELECT source, target, sum(c) AS ord FROM sp WHERE play = ? GROUP BY source, target ORDER BY ord DESC");
     $q->execute(array($play));
     $data = array();
     $data[] = array('Source', 'Target', 'Weight');
     while ($sp = $q->fetch()) {
+      // a threshold do not make the graph more readable
+      // if ( ($sp['ord']/$playc) < $threshold) break;
       $data[] = array(
         $sp['source'],
         $sp['target'],
@@ -292,18 +300,31 @@ class Dramabase {
       $verse,
       $genre,
     ));
-    // ditribution
+    // roles
     $this->pdo->beginTransaction();
     $q = $this->pdo->prepare("
-    INSERT INTO role (play, code, label, rend, sex, age, love)
-              VALUES (?,    ?,      ?,   ?,    ?,   ?,   ?);
+    INSERT INTO role (play, code, label, title, note, rend, sex, age, love)
+              VALUES (?,    ?,      ?,   ?,     ?,    ?,    ?,   ?,   ?);
     ");
     $nodes = $this->_xpath->query("//tei:role");
     $castlist = array();
     foreach ($nodes as $n) {
+      $note = null;
       $code = $n->getAttribute ('xml:id');
       $castlist[$code] = true;
       $label = $n->nodeValue;
+      $nl = @$n->parentNode->getElementsByTagName("roleDesc");
+      if ($nl->length) $title = trim($nl->item(0)->nodeValue);
+      else {
+        $title = '';
+        $nl = $n->parentNode->firstChild;
+        while($nl) {
+          if ($nl->nodeType == XML_TEXT_NODE ) $title .= $nl->nodeValue;
+          $nl = $nl->nextSibling;
+        }
+        $title = preg_replace(array("/^[\s :;,\.]+/u", "/[\s :,;\.]+$/u"), array('', ''), $title);
+        if (!$title) $title = null;
+      }
       $rend = ' '.$n->getAttribute ('rend').' '; // espace séparateur
       if (preg_match('@ female @i', $rend)) $sex = 2;
       else if (preg_match('@ male @i', $rend)) $sex = 1;
@@ -311,12 +332,14 @@ class Dramabase {
       preg_match('@ (cadet|junior|senior|veteran) @i', $rend, $matches);
       $age = @$matches[1];
       $love = preg_match('@ love @i', $rend);
-      // si pas de nom, inaffichable en réseau, ou erreur ?
-      if (!$label) continue;
+      // si pas de nom, garder tout de même, risque d’erreur réseau
+      if (!$label) $label = $code;
       $q->execute(array(
         $playcode,
         $code,
         $label,
+        $title,
+        $note,
         $rend,
         $sex,
         $age,
@@ -434,6 +457,12 @@ class Dramabase {
       $file = array_shift($_SERVER['argv']);
       if (file_exists($file)) {
         $dramabase->insert($file);
+      }
+      else {
+        $glob = $file;
+        foreach(glob($glob) as $file) {
+          $dramabase->insert($file);
+        }
       }
       // TODO, glob
     }

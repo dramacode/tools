@@ -9,7 +9,7 @@ $width = @$_REQUEST['width'];
 <html>
   <head>
     <meta charset="UTF-8"/>
-    <title>Dramatable</title>
+    <title>Dramaplan</title>
     <style type="text/css">
 html, body { height: 100%; margin: 0;}
 button { cursor: pointer; border: none; padding: none; font-size: 20px; font-family: sans-serif; }

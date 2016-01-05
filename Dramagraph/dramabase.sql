@@ -40,6 +40,8 @@ CREATE TABLE role (
   play     TEXT,     -- nom de fichier de la pièce
   code     TEXT,     -- code personne
   label    TEXT,     -- nom affichable
+  title    TEXT,     -- description du rôle (mère de…, amant de…) tel que dans la source
+  note     TEXT,     -- possibilité de description plus étendue
   rend     TEXT,     -- série de mots clés séparés d’espaces (male|female)? (cadet)
   sex      INTEGER,  -- 1: homme, 2: femme, null: ?, 0: asexué, 9: dieu, ISO 5218:2004
   age      TEXT,     -- (cadet|junior|senior|veteran)

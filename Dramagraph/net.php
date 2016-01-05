@@ -11,7 +11,9 @@ $base = new Dramabase('basedrama.sqlite');
     <title>Dramagraph</title>
     <script src="../sigma/sigma.min.js">//</script>
     <script src="../sigma/sigma.layout.forceAtlas2.min.js">//</script>
-    <script src="../sigma/sigma.plugins.dragNodes.min.js"></script>
+    <script src="../sigma/sigma.plugins.dragNodes.min.js">//</script>
+
+
     <style type="text/css">
 html, body { height: 100%; margin: 0;}
 #container {
@@ -21,7 +23,7 @@ html, body { height: 100%; margin: 0;}
   min-height: 400px;
   margin: auto;
 }
-button { cursor: pointer; border: none; padding: none; font-size: 20px; font-family: sans-serif; }
+button { cursor: pointer; border: none; padding: 0; font-size: 20px; font-family: sans-serif; }
     </style>
   </head>
   <body>
@@ -67,9 +69,15 @@ var s = new sigma({
     defaultEdgeColor: "#DDD",
     defaultNodeColor: "#DDD",
     edgeColor: "default",
+    drawLabels: true,
+    defaultLabelSize: 18,
+    // font: 'arial',    
+    /* marche mais trop grand avec les commentaires
     labelSize: "proportional",
     labelSizeRatio: 1,
-    drawLabels: true,
+    */
+    // labelAlignment: 'center', // linkurous only and not compatible avec drag node
+
     sideMargin: 2,
     maxNodeSize: 40,
     maxEdgeSize: 25,
@@ -78,16 +86,20 @@ var s = new sigma({
     borderSize: 2,
     outerBorderSize: 3, // stroke size of active nodes
     defaultNodeBorderColor: '#FFF',
-    defaultNodeOuterBorderColor: 'rgb(236, 81, 72)' // stroke color of active nodes
+    defaultNodeOuterBorderColor: 'rgb(236, 81, 72)', // stroke color of active nodes
+    enableEdgeHovering: true,
+    edgeHoverColor: 'edge',
+    defaultEdgeHoverColor: '#000',
+    edgeHoverSizeRatio: 1,
+    edgeHoverExtremities: true,
   }
 });
 
 // Start the ForceAtlas2 algorithm:
-var slow = 1;
 var startForce = function() {
   document.getElementById('grav').innerHTML = '◼';
   s.startForceAtlas2({
-    slowDown: slow,
+    // slowDown: 1,
     // adjustSizes: true, // non, ralentit tout
     // outboundAttractionDistribution: true, // non, éloigne Phèdre d’Œnone
     // edgeWeightInfluence: 1, // ralentit tout, impossible de ramener Phèdre à Œnone
@@ -95,12 +107,12 @@ var startForce = function() {
     // barnesHutTheta: 0.1,  // pas d’effet apparent sur si petit graphe
     gravity: 0.7, // instable si > 2
     // linLogMode: true, // non, ralentit trop
-    worker: true, // on dit que c’est bien
+    worker: false, // ne marche pas dans Opera
   });
 };
 // stop it after a few seconds
 var stopForce = function() {
-  setTimeout(function() { s.killForceAtlas2(); document.getElementById('grav').innerHTML = '►'; }, 5000*slow);
+  setTimeout(function() { s.killForceAtlas2(); document.getElementById('grav').innerHTML = '►'; }, 5000);
   
 };
 startForce();
@@ -133,7 +145,23 @@ document.getElementById('mix').addEventListener('click', function() {
   stopForce();
   return false;
 });
-
+s.bind('overNode', function(e) {
+  // attention, n’écrire qu’une fois
+  if (!e.data.node._label) {
+    console.log(e.data);
+    e.data.node["renderer1:size"]=e.data.node["renderer1:size"]/2;
+    e.data.node._label = e.data.node.label;
+    e.data.node.label = e.data.node.label + ', ' + e.data.node.title;
+    s.refresh();
+  }
+});
+s.bind('outNode', function(e) {
+  if (e.data.node._label) {
+    e.data.node.label = e.data.node._label;
+    e.data.node._label =null;
+    s.refresh();
+  }
+});
     </script>
   </body>
 </html>
