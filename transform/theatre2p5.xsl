@@ -2,8 +2,10 @@
 <xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.1" xmlns="http://www.tei-c.org/ns/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" exclude-result-prefixes="tei">
   <xsl:strip-space elements="tei:TEI tei:TEI.2 tei:body tei:castList tei:div tei:div1 tei:div2  tei:docDate tei:docImprint tei:docTitle tei:fileDesc tei:front tei:group tei:index tei:listWit tei:p tei:publicationStmp tei:publicationStmt tei:sourceDesc tei:SourceDesc tei:sources tei:sp tei:text tei:teiHeader tei:text tei:titleStmt"/>
   <xsl:output method="xml" encoding="UTF-8" indent="yes"/>
-  <xsl:variable name="who1">ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöùúûüý’' </xsl:variable>
-  <xsl:variable name="who2">abcdefghijklmnopqrstuvwxyzaaaaaaceeeeiiiinooooouuuuyaaaaaaceeeeiiiinooooouuuuy---</xsl:variable>
+  <xsl:variable name="who1"
+    >ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑŒÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöùúûüýœ’' </xsl:variable>
+  <xsl:variable name="who2"
+    >abcdefghijklmnopqrstuvwxyzaaaaaaceeeeiiiin?ooooouuuuyaaaaaaceeeeiiiinooooouuuuy?---</xsl:variable>
   <xsl:variable name="ABC">ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝ.</xsl:variable>
   <xsl:variable name="abc">abcdefghijklmnopqrstuvwxyzàáâãäåçèéêëìíîïñòóôõöùúûüý</xsl:variable>
   <xsl:key name="sp" match="tei:sp" use="@who"/>
@@ -91,21 +93,30 @@
   </xsl:template>
   <xsl:template match="tei:div1">
     <xsl:copy>
+      <xsl:attribute name="xml:id">
+        <xsl:number format="I"/>
+      </xsl:attribute>
+      <xsl:attribute name="type">act</xsl:attribute>
       <xsl:apply-templates select="@*"/>
       <xsl:if test="@type = 'acte'">
         <xsl:attribute name="type">act</xsl:attribute>
       </xsl:if>
-      <xsl:attribute name="xml:id">
-        <xsl:number format="I"/>
-      </xsl:attribute>
       <xsl:apply-templates/>
     </xsl:copy>
   </xsl:template>
   <xsl:template match="tei:div2">
     <xsl:copy>
       <xsl:apply-templates select="@*"/>
+      <xsl:attribute name="type">scene</xsl:attribute>
       <xsl:attribute name="xml:id">
-        <xsl:number count="tei:div1" format="I"/>
+        <xsl:choose>
+          <xsl:when test="../*[@xml:id]">
+            <xsl:value-of select="@xml:id"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:number count="tei:body/tei:div | tei:body/tei:div1" format="I"/>
+          </xsl:otherwise>
+        </xsl:choose>
         <xsl:number format="01"/>
       </xsl:attribute>
       <!--
@@ -136,8 +147,15 @@
     <xsl:copy>
       <xsl:apply-templates select="@*"/>
       <xsl:attribute name="xml:id">
-        <xsl:number count="tei:div1" format="I"/>
-        <xsl:number count="tei:div2" format="01"/>
+        <xsl:choose>
+          <xsl:when test="../../*[@xml:id]">
+            <xsl:value-of select="@xml:id"/>
+          </xsl:when>
+          <xsl:otherwise>
+           <xsl:number count="tei:body/tei:div | tei:body/tei:div1" format="I"/>
+          </xsl:otherwise>
+        </xsl:choose>
+        <xsl:number count="tei:body/tei:div/tei:div | tei:body/tei:div1/tei:div2" format="01"/>
         <xsl:text>-</xsl:text>
         <xsl:number count="tei:sp"/>
       </xsl:attribute>
@@ -169,7 +187,9 @@
     </xsl:choose>
   </xsl:template>
   <xsl:template match="tei:speaker/text()">
-    <xsl:value-of select="translate(normalize-space(.), $ABC, $abc)"/>
+    <xsl:variable name="txt" select="normalize-space(.)"/>
+    <xsl:value-of select="substring($txt, 1, 1)"/>
+    <xsl:value-of select="translate(substring($txt, 2), $ABC, $abc)"/>
   </xsl:template>
   <!-- paragraphes à recompter après que le texte soit établi -->
   <xsl:template match="tei:p/@id | tei:s/@id"/>

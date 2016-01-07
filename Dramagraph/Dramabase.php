@@ -95,7 +95,7 @@ class Dramabase {
 
   public function sigma($play) {
     $color = array();
-    echo "var g={ nodes: [\n";
+    echo "{ nodes: [\n";
     $data = $this->nodes($play);
     // 'Id', 'Label', 'c', 'title', 'targets', 'color'
     $count = count($data) - 1;
@@ -149,6 +149,14 @@ class Dramabase {
     $bibl .= ', '.(($play['verse'])?"vers":"prose");
     $bibl .= ')';
     return $bibl;
+  }
+  /**
+   * Line
+   */
+  public function timeline($playcode, $max=null) {
+    $playcode = $this->pdo->quote($playcode);
+    $play = $this->pdo->query("SELECT * FROM play WHERE code = $playcode")->fetch();
+    
   }
   /**
    * Table 
@@ -272,6 +280,9 @@ class Dramabase {
     $author = $this->_xpath->query("/*/tei:teiHeader//tei:author");
     if ($author->length) $author = $author->item(0)->textContent;
     else $author = null;
+    $year = $this->_xpath->query("/*/tei:teiHeader/tei:profileDesc/tei:creation/tei:date/@when");
+    if ($year->length) $year = $year->item(0)->nodeValue;
+    else $year = null;
     $title = $this->_xpath->query("/*/tei:teiHeader//tei:title");
     if ($title->length) $title = $title->item(0)->textContent;
     else $title = null;
@@ -279,7 +290,7 @@ class Dramabase {
     if ($genre->length) $genre = $genre->item(0)->nodeValue;
     else $genre = null;
     preg_match('@^([^_]+)_([0-9]+)?@i', $playcode, $matches);
-    $year = @$matches[2];
+
     $acts = $this->_xpath->evaluate("count(/*/tei:text/tei:body//tei:*[@type='act'])");
     if (!$acts) $acts = $this->_xpath->evaluate("count(/*/tei:text/tei:body/*[tei:div|tei:div2])");
     if (!$acts) $acts = 1;
@@ -311,8 +322,10 @@ class Dramabase {
     foreach ($nodes as $n) {
       $note = null;
       $code = $n->getAttribute ('xml:id');
+      if (!$code) continue;
       $castlist[$code] = true;
-      $label = $n->nodeValue;
+      $label = $n->getAttribute ('n');
+      if (!$label) $label = $n->nodeValue;
       $nl = @$n->parentNode->getElementsByTagName("roleDesc");
       if ($nl->length) $title = trim($nl->item(0)->nodeValue);
       else {

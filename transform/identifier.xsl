@@ -19,11 +19,11 @@
   <xsl:template match="tei:note"/>
   <xsl:template match="tei:body/tei:div | tei:body/tei:div1">
     <div1>
-      <xsl:apply-templates select="@*"/>
-      <xsl:attribute name="type">act</xsl:attribute>
       <xsl:attribute name="xml:id">
         <xsl:number format="I"/>
       </xsl:attribute>
+      <xsl:apply-templates select="@*"/>
+      <xsl:attribute name="type">act</xsl:attribute>
       <xsl:apply-templates/>
     </div1>
   </xsl:template>
@@ -32,7 +32,14 @@
       <xsl:apply-templates select="@*"/>
       <xsl:attribute name="type">scene</xsl:attribute>
       <xsl:attribute name="xml:id">
-        <xsl:number count="tei:body/tei:div | tei:body/tei:div1" format="I"/>
+        <xsl:choose>
+          <xsl:when test="parent::*[@xml:id]">
+            <xsl:value-of select="parent::*[@xml:id]"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:number count="tei:body/tei:div | tei:body/tei:div1" format="I"/>
+          </xsl:otherwise>
+        </xsl:choose>
         <xsl:number format="01"/>
       </xsl:attribute>
       <xsl:apply-templates/>
@@ -42,7 +49,14 @@
     <xsl:copy>
       <xsl:apply-templates select="@*"/>
       <xsl:attribute name="xml:id">
-        <xsl:number count="tei:body/tei:div | tei:body/tei:div1" format="I"/>
+        <xsl:choose>
+          <xsl:when test="../../*[@xml:id]">
+            <xsl:value-of select="@xml:id"/>
+          </xsl:when>
+          <xsl:otherwise>
+           <xsl:number count="tei:body/tei:div | tei:body/tei:div1" format="I"/>
+          </xsl:otherwise>
+        </xsl:choose>
         <xsl:number count="tei:body/tei:div/tei:div | tei:body/tei:div1/tei:div2" format="01"/>
         <xsl:text>-</xsl:text>
         <xsl:number count="tei:sp"/>
