@@ -34,7 +34,7 @@
       <xsl:attribute name="xml:id">
         <xsl:choose>
           <xsl:when test="parent::*[@xml:id]">
-            <xsl:value-of select="parent::*[@xml:id]"/>
+            <xsl:value-of select="parent::*[@xml:id]/@xml:id"/>
           </xsl:when>
           <xsl:otherwise>
             <xsl:number count="tei:body/tei:div | tei:body/tei:div1" format="I"/>
@@ -50,8 +50,8 @@
       <xsl:apply-templates select="@*"/>
       <xsl:attribute name="xml:id">
         <xsl:choose>
-          <xsl:when test="../../*[@xml:id]">
-            <xsl:value-of select="@xml:id"/>
+          <xsl:when test="parent::*/parent::*[@xml:id]">
+            <xsl:value-of select="parent::*/parent::*[@xml:id]/@xml:id"/>
           </xsl:when>
           <xsl:otherwise>
            <xsl:number count="tei:body/tei:div | tei:body/tei:div1" format="I"/>
@@ -65,22 +65,32 @@
     </xsl:copy>
   </xsl:template>
   <!-- Normalisation -->
+  <!--
   <xsl:template match="tei:speaker/text()">
     <xsl:value-of select="translate(., $ABC, $abc)"/>
   </xsl:template>
+  -->
   <xsl:template match="tei:p[.='']"/>
   <xsl:template match="tei:pb"/>
   <xsl:template match="tei:space"/>
   <!-- vers numérotation OK -->
-  <!--
-  <xsl:template match="tei:l/@id">
-    <xsl:attribute name="n">
-      <xsl:value-of select="."/>
-    </xsl:attribute>
-    <xsl:attribute name="xml:id">
-      <xsl:text>l</xsl:text>
-      <xsl:value-of select="."/>
-    </xsl:attribute>
+
+  <xsl:template match="tei:l">
+    <xsl:copy>
+      <xsl:copy-of select="@rend|@part"/>
+      <xsl:variable name="n">
+        <xsl:number count="tei:l[not(@part) or @part='I' or @part='i']" from="tei:body" level="any"/>
+      </xsl:variable>
+      <xsl:if test="not(@part) or @part='I' or @part='i'">
+        <xsl:attribute name="n">
+          <xsl:value-of select="$n"/>
+        </xsl:attribute>
+        <xsl:attribute name="xml:id">
+          <xsl:text>l</xsl:text>
+          <xsl:value-of select="$n"/>
+        </xsl:attribute>
+      </xsl:if>
+      <xsl:apply-templates/>
+    </xsl:copy>
   </xsl:template>
-  -->
 </xsl:transform>

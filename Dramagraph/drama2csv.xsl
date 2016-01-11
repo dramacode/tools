@@ -2,11 +2,7 @@
 <!-- 
 Ramasser des informations chiffrées d’une pièce 
 -->
-<xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.1"
-  xmlns="http://www.tei-c.org/ns/1.0"
-  xmlns:tei="http://www.tei-c.org/ns/1.0"
-  exclude-result-prefixes="tei"
-  >
+<xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.1" xmlns="http://www.tei-c.org/ns/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" exclude-result-prefixes="tei">
   <!-- CSV -->
   <xsl:output method="text" encoding="UTF-8" indent="yes"/>
   <!-- Lister les rôles en tête, pour des listes par scènes -->
@@ -20,7 +16,7 @@ Ramasser des informations chiffrées d’une pièce
   <xsl:variable name="tab" select="'&#09;'"/>
   <xsl:variable name="apos">'</xsl:variable>
   <xsl:variable name="quot">"</xsl:variable>
-  <xsl:variable name="scene">scene</xsl:variable> 
+  <xsl:variable name="scene">scene</xsl:variable>
   <xsl:template match="/">
     <xsl:text>play</xsl:text>
     <xsl:value-of select="$tab"/>
@@ -44,7 +40,6 @@ Ramasser des informations chiffrées d’une pièce
     <xsl:value-of select="$lf"/>
     <xsl:apply-templates select="/*/tei:text/tei:body/*"/>
   </xsl:template>
-
   <!-- Acte -->
   <xsl:template match="tei:body/tei:div1 | tei:body/tei:div">
     <xsl:variable name="act">
@@ -56,12 +51,19 @@ Ramasser des informations chiffrées d’une pièce
           <xsl:number format="I"/>
         </xsl:otherwise>
       </xsl:choose>
-    </xsl:variable>   
-    <xsl:apply-templates select="tei:div2|tei:div|tei:sp">
-      <xsl:with-param name="act" select="$act"/>
-    </xsl:apply-templates>
+    </xsl:variable>
+    <xsl:choose>
+      <xsl:when test="@type = 'prologue'"/>
+      <xsl:when test="@type = 'intermede'"/>
+      <xsl:when test="@type = 'interlude'"/>
+      <xsl:when test="@type = 'ballet'"/>
+      <xsl:otherwise>
+        <xsl:apply-templates select="tei:div2|tei:div|tei:sp">
+          <xsl:with-param name="act" select="$act"/>
+        </xsl:apply-templates>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
-
   <!-- Scène -->
   <xsl:template match="tei:body/tei:div1/tei:div2 | tei:body/tei:div/tei:div">
     <xsl:param name="act"/>
@@ -76,67 +78,79 @@ Ramasser des informations chiffrées d’une pièce
         </xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
-    <xsl:apply-templates select="tei:sp">
-      <xsl:with-param name="act" select="$act"/>
-      <xsl:with-param name="scene" select="$scene"/>
-    </xsl:apply-templates>
+    <xsl:choose>
+      <xsl:when test="@type = 'prologue'"/>
+      <xsl:when test="@type = 'epilogue'"/>
+      <xsl:when test="@type = 'intermede'"/>
+      <xsl:when test="@type = 'interlude'"/>
+      <xsl:when test="@type = 'ballet'"/>
+      <xsl:otherwise>
+        <xsl:apply-templates select="tei:sp">
+          <xsl:with-param name="act" select="$act"/>
+          <xsl:with-param name="scene" select="$scene"/>
+        </xsl:apply-templates>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
-
   <xsl:template match="tei:sp">
     <xsl:param name="act"/>
     <xsl:param name="scene"/>
-    <xsl:value-of select="$filename"/>
-    <xsl:value-of select="$tab"/>
-    <xsl:value-of select="$act"/>
-    <xsl:value-of select="$tab"/>
-    <xsl:value-of select="$scene"/>
-    <xsl:value-of select="$tab"/>
     <xsl:choose>
-      <xsl:when test="@xml:id">
-        <xsl:value-of select="@xml:id"/>
-      </xsl:when>
+      <xsl:when test="not(@who) or @who=''"/>
       <xsl:otherwise>
+        <xsl:value-of select="$filename"/>
+        <xsl:value-of select="$tab"/>
+        <xsl:value-of select="$act"/>
+        <xsl:value-of select="$tab"/>
         <xsl:value-of select="$scene"/>
-        <xsl:text>-</xsl:text>
-        <xsl:number/>
-      </xsl:otherwise>
-    </xsl:choose>
-    <xsl:value-of select="$tab"/>
-    <!-- source -->
-    <xsl:value-of select="substring-before(concat(@who, ' '), ' ')"/>
-    <xsl:value-of select="$tab"/>
-    <!-- target -->
-    <xsl:choose>
-      <xsl:when test="preceding-sibling::tei:sp">
-        <xsl:value-of select="substring-before(concat(preceding-sibling::tei:sp[1]/@who, ' '), ' ')"/>
-      </xsl:when>
-      <xsl:when test="following-sibling::tei:sp">
-        <xsl:value-of select="substring-before(concat(following-sibling::tei:sp[1]/@who, ' '), ' ')"/>
-      </xsl:when>
-      <xsl:otherwise>
+        <xsl:value-of select="$tab"/>
+        <xsl:choose>
+          <xsl:when test="@xml:id">
+            <xsl:value-of select="@xml:id"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:value-of select="$scene"/>
+            <xsl:text>-</xsl:text>
+            <xsl:number/>
+          </xsl:otherwise>
+        </xsl:choose>
+        <xsl:value-of select="$tab"/>
+        <!-- source -->
         <xsl:value-of select="substring-before(concat(@who, ' '), ' ')"/>
+        <xsl:value-of select="$tab"/>
+        <!-- target -->
+        <xsl:choose>
+          <xsl:when test="preceding-sibling::tei:sp">
+            <xsl:value-of select="substring-before(concat(preceding-sibling::tei:sp[1]/@who, ' '), ' ')"/>
+          </xsl:when>
+          <xsl:when test="following-sibling::tei:sp">
+            <xsl:value-of select="substring-before(concat(following-sibling::tei:sp[1]/@who, ' '), ' ')"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:value-of select="substring-before(concat(@who, ' '), ' ')"/>
+          </xsl:otherwise>
+        </xsl:choose>
+        <xsl:value-of select="$tab"/>
+        <!-- verses -->
+        <xsl:value-of select="count(.//tei:l)"/>
+        <xsl:value-of select="$tab"/>
+        <xsl:variable name="txt">
+          <xsl:apply-templates select="*" mode="txt"/>
+        </xsl:variable>
+        <!-- words, compter les mots, algo bête, nombre d’espaces et d’apostrophes  -->
+        <xsl:value-of select="1 + string-length($txt) - string-length(translate($txt, concat(' ’', $apos), ''))"/>
+        <xsl:value-of select="$tab"/>
+        <!-- chars -->
+        <xsl:value-of select="string-length($txt)"/>
+        <xsl:value-of select="$tab"/>
+        <!-- text -->
+        <xsl:text>"</xsl:text>
+        <xsl:value-of select="translate($txt, $quot, '＂')"/>
+        <xsl:text>"</xsl:text>
+        <xsl:value-of select="$lf"/>
       </xsl:otherwise>
     </xsl:choose>
-    <xsl:value-of select="$tab"/>
-    <!-- verses -->
-    <xsl:value-of select="count(.//tei:l)"/>
-    <xsl:value-of select="$tab"/>
-    <xsl:variable name="txt">
-      <xsl:apply-templates select="*" mode="txt"/>
-    </xsl:variable>
-    <!-- words, compter les mots, algo bête, nombre d’espaces et d’apostrophes  -->
-    <xsl:value-of select="1 + string-length($txt) - string-length(translate($txt, concat(' ’', $apos), ''))"/>
-    <xsl:value-of select="$tab"/>
-    <!-- chars -->
-    <xsl:value-of select="string-length($txt)"/>
-    <xsl:value-of select="$tab"/>
-    <!-- text -->
-    <xsl:text>"</xsl:text>
-    <xsl:value-of select="translate($txt, $quot, '＂')"/>
-    <xsl:text>"</xsl:text>
-    <xsl:value-of select="$lf"/>
   </xsl:template>
-
   <!-- To Count chars -->
   <xsl:template match="tei:note|tei:stage|tei:speaker" mode="txt"/>
   <xsl:template match="tei:p|tei:l" mode="txt">
@@ -148,5 +162,4 @@ Ramasser des informations chiffrées d’une pièce
     </xsl:variable>
     <xsl:value-of select="normalize-space($txt)"/>
   </xsl:template>
-  
 </xsl:transform>

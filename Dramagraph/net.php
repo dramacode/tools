@@ -1,6 +1,6 @@
 <?php
 if (isset($_REQUEST['play'])) $play = $_REQUEST['play'];
-else $play = 'moliere_1669_tartuffe';
+else $play = 'moliere_tartuffe';
 include('Dramabase.php');
 $base = new Dramabase('basedrama.sqlite');
 
@@ -62,7 +62,7 @@ foreach ($base->pdo->query("SELECT * FROM play ORDER BY code") as $row) {
     </div>
     <script>
 var data = <?php $base->sigma($play); ?>;
-var graph1 = new Dramanet("container", data);
+var graph1 = new Dramanet("container", data, "../sigma/worker.js"); // 
     </script>
   </body>
 </html>

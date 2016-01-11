@@ -17,20 +17,23 @@ class Dramabase {
   /** Processeur xslt */
   private $_xslt;
   /** Couleurs de nœuds */
+
   public $ncols = array(
-    "rgba(255, 0, 0, 0.7)",
-    "rgba(0, 0, 255, 0.7)",
-    "rgba(128, 0, 0, 0.7)",
-    "rgba(0, 0, 128, 0.7)",
-    "rgba(128, 0, 128, 0.7)",
+    "#FF4C4C",
+    "#A64CA6",
+    "#4C4CFF",
+     "#4c4ca6",
+    "#A6A6A6",
   );
+
+
   /** Couleurs de liens */
   public $ecols = array(
     "rgba(255, 0, 0, 0.5)",
-    "rgba(0, 0, 255, 0.5)",
-    "rgba(128, 0, 0, 0.5)",
-    "rgba(0, 0, 128, 0.5)",
     "rgba(128, 0, 128, 0.5)",
+    "rgba(0, 0, 255, 0.5)",
+    "rgba(0, 0, 128, 0.5)",
+    "rgba(128, 128, 128, 0.5)",
   );
 
   /**
@@ -103,23 +106,24 @@ class Dramabase {
       // ne pas mettre les personnages non liés, écarte topr le réseau
       if (!$data[$i][4]) continue;
       $col = "";
-      /*
       // position initiale en cercle
-      $angle =  (2*M_PI/$count) * (($i -1)*($count/3.8)); // cercle rempli tous les quart
+      $angle =  -M_PI/2+(2*M_PI/$count) * ($i -1); // cercle rempli tous les quart
       // $angle =  2*M_PI/$count * ($i -1);
-      $x = cos($angle);
-      $y = sin($angle);
-      */
+      $x =  number_format(cos($angle)*6, 4);
+      $y =  number_format(sin($angle)*6, 4);
+      /*
       // position initiale en ligne
       // $x = $i ; 
       $y = 1;
       // $x = -$i*(1-2*($i%2));
       $x=$i;
+      */
       if (isset($this->ncols[$i-1])) {
         $color[$data[$i][0]] = $this->ecols[$i-1];
         $col = ", color: '".$this->ncols[$i-1]."'";
       }
-      echo "  {id:'".$data[$i][0]."', label:".json_encode($data[$i][1]).", size:".(0+$data[$i][2]).", x: $x, y: $y".$col.", title: ".json_encode($data[$i][3])."}";
+      $json_options = JSON_UNESCAPED_UNICODE;
+      echo "  {id:'".$data[$i][0]."', label:".json_encode($data[$i][1],  $json_options).", size:".(0+$data[$i][2]).", x: $x, y: $y".$col.", title: ".json_encode($data[$i][3],  $json_options)."}";
       if ($i+1<count($data)) echo ',';
       echo "\n";
     }
@@ -128,7 +132,10 @@ class Dramabase {
     for ($i=count($data)-1; $i>0; $i--) {
       $col = "";
       if (isset($color[$data[$i][0]])) $col = ", color: '".$color[$data[$i][0]]."'";
-      echo "  {id:'e".$i."', source:'".$data[$i][0]."', target:'".$data[$i][1]."', size:".$data[$i][2].$col.", type:'curvedArrow'}";
+      // bigger less opacity ?
+      // number_format(0.5+(1-$data[$i][3])*0.5, 1)
+      // $col=", color: 'rgba(128, 128, 128, 0.5)'";
+      echo "  {id:'e".$i."', source:'".$data[$i][0]."', target:'".$data[$i][1]."', size:".$data[$i][2].$col.", type:'drama'}";
       echo ',';
       echo "\n";
     }
@@ -156,8 +163,90 @@ class Dramabase {
   public function timeline($playcode, $max=null) {
     $playcode = $this->pdo->quote($playcode);
     $play = $this->pdo->query("SELECT * FROM play WHERE code = $playcode")->fetch();
-    
   }
+  public function timebars($playcode, $max=null) {
+    
+    echo '
+<style>
+.timebars, .timebars * { box-sizing: border-box; }
+.timebars:after, .timebars:after { content:""; display:table; }
+.timebars:after { clear:both; }
+.timebars { zoom:1; margin-top: 1.5em; }
+.timebars { height: 200px; font-family: sans-serif;  }
+.timebars .act { position: absolute; margin-top: -1.1em;  border-left: 3px #000 solid; padding-left: 1ex; margin-bottom: 1em; white-space: nowrap;}
+.timebars .scene { float: left; height: 100%;}
+.timebars .scene1 {  }
+.timebars .role { background-color: rgba(192, 192, 192, 0.7); border-radius: 3px/0.5em; border-bottom: 1px solid #FFFFFF; color: rgba(0, 0, 0, 0.5); font-stretch: ultra-condensed; font-size: 13px; }
+.timebars .role1 { background-color: rgba(255, 0, 0, 0.7); border-bottom: none; color: rgba(255, 255, 255, 0.7);}
+.timebars .role2 { background-color: rgba(128, 0, 128, 0.7); border-bottom: none; color: rgba(255, 255, 255, 0.7);}
+.timebars .role3 { background-color: rgba(0, 0, 255, 0.7); border-bottom: none; color: rgba(255, 255, 255, 0.7);}
+.timebars .role4 { background-color: rgba(0, 0, 128, 0.7); border-bottom: none; color: rgba(255, 255, 255, 0.7);}
+.timebars .role5 { background-color: rgba(128, 128, 128, 0.7); border-bottom: none; color: rgba(255, 255, 255, 0.7); }
+</style>
+    ';
+    $playcode = $this->pdo->quote($playcode);
+    $play = $this->pdo->query("SELECT * FROM play WHERE code = $playcode")->fetch();
+    // 1 pixel = 1000 caractères
+    if (!$max) $width = 'auto';
+    else if (is_numeric($max) && $max > 50) $width = round($play['c'] / (100000/$max)).'px';
+    else $width = "auto";
+    
+    
+    // requête sur le nombre de caractère d’un rôle dans une scène
+    $qsp = $this->pdo->prepare("SELECT sum(c) FROM sp WHERE play = $playcode AND scene = ? AND source = ?");
+    
+    /*
+    echo '
+<div class="timebars" style="width: '.$width.'">
+    ';   
+    foreach ($this->pdo->query("SELECT * FROM scene WHERE play = $playcode") as $scene) {
+      
+    }
+    echo '
+</div>
+    ';
+    */
+    
+    echo '
+<div class="timebars" style="width: '.$width.'">
+    ';
+    $actlast = null;
+    $list = array();
+    foreach ($this->pdo->query("SELECT * FROM scene WHERE play = $playcode") as $scene) {
+      $class = '';
+      if ($actlast != $scene['act']) $class .= " scene1";
+      
+      $width = number_format(99*($scene['c']/$play['c']), 1);
+      if (!isset($scene['n'])) $scene['n'] = 0+ preg_replace('/\D/', '', $scene['code']);
+      echo '  <div class="scene'.$class.'" style="width: '.$width.'%;" title="Acte '.$scene['act'].', scène '.$scene['n'].'">'."\n";
+      if ($actlast != $scene['act']) echo '    <b class="act">Acte '.$scene['act'].'</b>';
+      $actlast = $scene['act'];
+      // boucle sur les rôles en ordre d’importance
+      $i = 0;
+      foreach ($this->pdo->query("SELECT * FROM role WHERE play = $playcode ORDER BY c DESC") as $role) {
+        $qsp->execute(array($scene['code'], $role['code']));
+        list($c) = $qsp->fetch();
+        $i++;
+        if (!$c) continue;
+        $height = number_format(100*$c / $scene['c']);
+        echo '<div class="role role'.$i.'"';
+        echo ' style="height: '.$height.'%"';
+        echo ' title="'.$role['label'].', acte '.$scene['act'].', scène '.$scene['n'].', '.round(100*$c / $scene['c']).'%"';
+        echo '>';
+        if ($width > 5.5 && $height > 15 ) { // && !isset($list[$role['code']])
+          echo '<span> '.$role['label'].'</span>';
+          $list[$role['code']] = true;
+        }
+        else echo ' ';
+        echo '</div>';
+      }
+      echo "  </div>\n";
+    }
+    echo '
+</div>
+    ';
+  }
+
   /**
    * Table 
    */
@@ -173,19 +262,23 @@ class Dramabase {
 <table class="timetable" '.$width.'>
   <caption>'.($this->bibl($play)).'</caption>
 ';
-    // timeline des scènes ?
+    // timeline des scènes
     $actlast = null;
-    echo '  <tr class="scenes">'."\n";
+    echo '<thead>
+  <tr class="scenes">
+';
     // attention les pourcentages de la largeur sont comptés sans les noms de personnages
     foreach ($this->pdo->query("SELECT * FROM scene WHERE play = $playcode") as $scene) {
-      $class = ' class="scene "';
+      $class = ' scene';
       if ($actlast != $scene['act']) $class .= " scene1";
       $actlast = $scene['act'];
       $width = number_format(100*($scene['c']/$play['c']), 1);
       $n = 0+ preg_replace('/\D/', '', $scene['code']);
-      echo '    <td'.$class.' style="width: '.$width.'%;" title="Acte '.$scene['act'].', scène '.$n.'"/>'."\n";
+      echo '    <td class="'.$class.'" style="width: '.$width.'%;" title="Acte '.$scene['act'].', scène '.$n.'"/>'."\n";
     }
-    echo "  </tr>\n";
+    echo "  </tr>
+  </thead>
+";
     
     // requête sur le nombre de caractère d’un rôle dans une scène
     $qsp = $this->pdo->prepare("SELECT sum(c) FROM sp WHERE play = $playcode AND scene = ? AND source = ?");
@@ -252,14 +345,17 @@ class Dramabase {
     $q = $this->pdo->prepare("SELECT source, target, sum(c) AS ord FROM sp WHERE play = ? GROUP BY source, target ORDER BY ord DESC");
     $q->execute(array($play));
     $data = array();
-    $data[] = array('Source', 'Target', 'Weight');
+    $data[] = array('Source', 'Target', 'Weight', 'max%');
+    $max = false;
     while ($sp = $q->fetch()) {
+      if(!$max) $max = $sp['ord'];
       // a threshold do not make the graph more readable
       // if ( ($sp['ord']/$playc) < $threshold) break;
       $data[] = array(
         $sp['source'],
         $sp['target'],
         $sp['ord'],
+        number_format($sp['ord']/$max, 2),
       );
     }
     return $data;
@@ -280,8 +376,12 @@ class Dramabase {
     $author = $this->_xpath->query("/*/tei:teiHeader//tei:author");
     if ($author->length) $author = $author->item(0)->textContent;
     else $author = null;
-    $year = $this->_xpath->query("/*/tei:teiHeader/tei:profileDesc/tei:creation/tei:date/@when");
-    if ($year->length) $year = $year->item(0)->nodeValue;
+    $nl = $this->_xpath->query("/*/tei:teiHeader/tei:profileDesc/tei:creation/tei:date");
+    if ($nl->length) {
+      $n = $nl->item(0);
+      $year = $n->getAttribute ('when');
+      if(!$year) $year = $n->nodeValue;
+    }
     else $year = null;
     $title = $this->_xpath->query("/*/tei:teiHeader//tei:title");
     if ($title->length) $title = $title->item(0)->textContent;
