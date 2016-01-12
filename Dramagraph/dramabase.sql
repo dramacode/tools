@@ -19,13 +19,27 @@ CREATE TABLE play (
 );
 CREATE UNIQUE INDEX play_code ON play(code);
 
+CREATE TABLE act (
+  -- un acte
+  id      INTEGER, -- rowid auto
+  play    TEXT,    -- code pièce
+  code    TEXT,    -- code acte
+  n       INTEGER, -- numéro d’ordre
+  sp      INTEGER, -- <sp> taille en répliques
+  l       INTEGER, -- <l> taille en vers
+  w       INTEGER, -- <w> (word) taille en mots
+  c       INTEGER, -- <c> (char) taille en caractères
+  PRIMARY KEY(id ASC)
+);
+CREATE UNIQUE INDEX act_code ON act(play, code);
+
 CREATE TABLE scene (
   -- une scène (référence pour la présence d’un rôle)
   id      INTEGER, -- rowid auto
   play    TEXT,    -- code pièce
   act     TEXT,    -- code acte
   code    TEXT,    -- code scene
-  n       INTEGER,
+  n       INTEGER, -- numéro d’ordre
   sp      INTEGER, -- <sp> taille en répliques
   l       INTEGER, -- <l> taille en vers
   w       INTEGER, -- <w> (word) taille en mots
@@ -33,11 +47,12 @@ CREATE TABLE scene (
   PRIMARY KEY(id ASC)
 );
 CREATE UNIQUE INDEX scene_code ON scene(play, code);
+CREATE UNIQUE INDEX scene_act ON scene(play, act);
 
 CREATE TABLE role (
   -- un rôle
   id       INTEGER,  -- rowid auto
-  play     TEXT,     -- nom de fichier de la pièce
+  play     TEXT,     -- code pièce
   code     TEXT,     -- code personne
   label    TEXT,     -- nom affichable
   title    TEXT,     -- description du rôle (mère de…, amant de…) tel que dans la source
@@ -78,6 +93,7 @@ CREATE TRIGGER playDel
   -- si on supprime une pièce, supprimer la cascade qui en dépend
   BEFORE DELETE ON play
   FOR EACH ROW BEGIN
+    DELETE FROM act WHERE act.play = OLD.code;
     DELETE FROM scene WHERE scene.play = OLD.code;
     DELETE FROM role WHERE role.play = OLD.code;
     DELETE FROM sp WHERE sp.play = OLD.code;

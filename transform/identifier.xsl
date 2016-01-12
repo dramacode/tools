@@ -22,8 +22,8 @@
       <xsl:attribute name="xml:id">
         <xsl:number format="I"/>
       </xsl:attribute>
+      <!-- recouvrir les identifiants calculés par l’identifiant inscrit -->
       <xsl:apply-templates select="@*"/>
-      <xsl:attribute name="type">act</xsl:attribute>
       <xsl:apply-templates/>
     </div1>
   </xsl:template>
@@ -75,7 +75,7 @@
   <xsl:template match="tei:space"/>
   <!-- vers numérotation OK -->
 
-  <xsl:template match="tei:l">
+  <xsl:template match="tei:l[ancestor::tei:body]">
     <xsl:copy>
       <xsl:copy-of select="@rend|@part"/>
       <xsl:variable name="n">

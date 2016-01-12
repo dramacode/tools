@@ -158,12 +158,125 @@ class Dramabase {
     return $bibl;
   }
   /**
-   * Line
+   * Propotion des rôles
    */
-  public function timeline($playcode, $max=null) {
+  public function rolerate($playcode, $max=1200) {
+    echo '
+<style>
+.rolerate { font-family: sans-serif; font-size: 15px; border-spacing: 0; border-collapse: collapse; }
+.rolerate, .rolerate * { box-sizing: border-box; }
+.rolerate th { text-align: right; }
+.rolerate .role { overflow: hidden; background-color: rgba(192, 192, 192, 0.7); color: rgba(0, 0, 0, 0.5); font-stretch: ultra-condensed; float: left; height: 2em; }
+.rolerate .role1 { background-color: rgba(255, 0, 0, 0.5); border-bottom: none; color: rgba(255, 255, 255, 1);}
+.rolerate .role2 { background-color: rgba(128, 0, 128, 0.5); border-bottom: none; color: rgba(255, 255, 255, 1);}
+.rolerate .role3 { background-color: rgba(0, 0, 255, 0.5); border-bottom: none; color:  rgba(255, 255, 255, 1);}
+.rolerate .role4 { background-color: rgba(0, 0, 128, 0.5); border-bottom: none; color:  rgba(255, 255, 255, 1);}
+.rolerate .role5 { background-color: rgba(128, 128, 128, 0.5); border-bottom: none; color: rgba(255, 255, 255, 1); }
+</style>
+    ';
+    if(!$max) $max=1000;
     $playcode = $this->pdo->quote($playcode);
     $play = $this->pdo->query("SELECT * FROM play WHERE code = $playcode")->fetch();
+    $playwidth = $play['c'] / (100000/$max);
+    echo  '<table class="rolerate">'."\n";
+    $dist = array();
+    foreach ($this->pdo->query("SELECT * FROM role WHERE play = $playcode ORDER BY c DESC") as $role) {
+      $dist[$role['code']] = array(
+        'label'=>$role['label'], 
+        'sp' => $role['sp'], 
+        'w' => $role['w'], 
+        'c' => $role['c']
+      );
+    }
+    foreach (array('c', 'w', 'sp') as $unit) {
+      echo "<tr><th>";
+      if ($unit=='c') echo "Caractères";
+      else if ($unit=='w') echo "Mots";
+      if ($unit=='sp') echo "Répliques";
+      echo "</th><td>";
+      $i=1;
+      foreach ($dist as $code=>$stats) {
+        $width = round($playwidth*$stats[$unit]/$play[$unit]);
+        echo '<span class="role role'.$i.'" title="'.$stats['label'].' " style="width: '.$width.'px"> '.$stats['label'].' </span>';
+        $i++;
+      }
+      echo "</td></tr>";
+    }
+    echo '</table>';
   }
+  /**
+   * Chiffres par rôle
+   */
+  /**
+   * Panneau vertical de pièce
+   */
+  public function timepanel($playcode, $max=800) {
+    
+    echo '
+<style>
+.timepanel { width: 100%; font-family: sans-serif; font-size: 13px; line-height: 1.2em; zoom:1; }
+.timepanel, .timepanel * { box-sizing: border-box; }
+.timepanel .acthead { display: block; text-align: right; padding: 1ex 1em 2px 1em;  }
+.timepanel:after, .timepanel:after { content:""; display:table; }
+.timepanel:after { clear:both; }
+.timepanel a  { display: block; border-bottom: none; }
+.timepanel a:hover  { opacity: 1; }
+.timepanel .role { float: left; height: 100%; background-color: rgba(192, 192, 192, 0.7); border-radius: 3px/0.5em; border-bottom: 1px solid #FFFFFF; color: rgba(0, 0, 0, 0.5); font-stretch: ultra-condensed; }
+.timepanel .role span { overflow: hidden; padding-left: 1ex; padding-top: 2px;}
+.timepanel .role1 { background-color: rgba(255, 0, 0, 0.5); border-bottom: none; color: rgba(255, 255, 255, 1);}
+.timepanel .role2 { background-color: rgba(128, 0, 128, 0.5); border-bottom: none; color: rgba(255, 255, 255, 1);}
+.timepanel .role3 { background-color: rgba(0, 0, 255, 0.5); border-bottom: none; color:  rgba(255, 255, 255, 1);}
+.timepanel .role4 { background-color: rgba(0, 0, 128, 0.5); border-bottom: none; color:  rgba(255, 255, 255, 1);}
+.timepanel .role5 { background-color: rgba(128, 128, 128, 0.5); border-bottom: none; color: rgba(255, 255, 255, 1); }
+</style>
+    ';
+    $playcode = $this->pdo->quote($playcode);
+    $play = $this->pdo->query("SELECT * FROM play WHERE code = $playcode")->fetch();
+    // 1 pixel = 1000 caractères
+    if (!$max) $playheight = '800';
+    else if (is_numeric($max) && $max > 50) $playheight = round($play['c'] / (100000/$max));
+    else $playheight = '800';
+    
+    
+    // requête sur le nombre de caractère d’un rôle dans une scène
+    $qsp = $this->pdo->prepare("SELECT sum(c) FROM sp WHERE play = $playcode AND scene = ? AND source = ?");
+    echo '<div class="timepanel">'."\n";
+    foreach ($this->pdo->query("SELECT * FROM act WHERE play = $playcode") as $act) {
+      echo '    <a href="#'.$act['code'].'" class="acthead">Acte '.$act['code']."</a>\n";
+      echo '    <div class="act" style="height: '.(ceil($playheight * $act['c']/$play['c'])).'px">'."\n";
+      foreach ($this->pdo->query("SELECT * FROM scene WHERE play = $playcode AND act = ".$this->pdo->quote($act['code'])) as $scene) {
+        $sceneheight = number_format(99*($scene['c']/$act['c']), 1);
+        if (!isset($scene['n'])) $scene['n'] = 0+ preg_replace('/\D/', '', $scene['code']);
+        echo '  <a href="#'.$scene['code'].'" class="scene" style="height: '.$sceneheight.'%;" title="Acte '.$scene['act'].', scène '.$scene['n'].'">'."\n";
+        $i = 0;
+        foreach ($this->pdo->query("SELECT * FROM role WHERE play = $playcode ORDER BY c DESC") as $role) {
+          $qsp->execute(array($scene['code'], $role['code']));
+          list($c) = $qsp->fetch();
+          $i++;
+          if (!$c) continue;
+          $width = number_format(99*$c / $scene['c']);
+          echo '<span class="role role'.$i.'"';
+          echo ' style="width: '.$width.'%"';
+          echo ' title="'.$role['label'].', acte '.$scene['act'].', scène '.$scene['n'].', '.round(100*$c / $scene['c']).'%"';
+          echo '>';
+          if ($width > 30 && ($playheight * $scene['c']/$play['c']) > 15 ) { // && !isset($list[$role['code']])
+            echo '<span>'.$role['label'].'</span>';
+            $list[$role['code']] = true;
+          }
+          else echo ' ';
+          echo '</span>';
+        }
+        echo "  </a>\n";
+      }
+      echo '    </div>';
+    }
+    
+    /*
+
+    */
+    echo "\n</div>\n";
+  }
+
   public function timebars($playcode, $max=null) {
     
     echo '
@@ -511,6 +624,10 @@ class Dramabase {
     UPDATE play SET l = (SELECT SUM(l) FROM sp WHERE play = $play) WHERE code = $play;
     UPDATE play SET w = (SELECT SUM(w) FROM sp WHERE play = $play) WHERE code = $play;
     UPDATE play SET c = (SELECT SUM(c) FROM sp WHERE play = $play) WHERE code = $play;
+    INSERT INTO act (play, code, sp) SELECT play, act, count(*) FROM sp WHERE play = $play GROUP BY act;
+    UPDATE act SET l = (SELECT SUM(l) FROM sp WHERE play = $play AND sp.act = act.code) WHERE play = $play;
+    UPDATE act SET w = (SELECT SUM(w) FROM sp WHERE play = $play AND sp.act = act.code) WHERE play = $play;
+    UPDATE act SET c = (SELECT SUM(c) FROM sp WHERE play = $play AND sp.act = act.code) WHERE play = $play;
     INSERT INTO scene (play, act, code, sp) SELECT play, act, scene, count(*) FROM sp WHERE play = $play GROUP BY scene;
     UPDATE scene SET l = (SELECT SUM(l) FROM sp WHERE play = $play AND sp.scene = scene.code) WHERE play = $play;
     UPDATE scene SET w = (SELECT SUM(w) FROM sp WHERE play = $play AND sp.scene = scene.code) WHERE play = $play;
@@ -542,6 +659,7 @@ class Dramabase {
       if (STDERR) fwrite(STDERR, $who.' l. '.$n->getLineNo()."\n");
     }
   }
+
   /**
    * Command line API 
    */
