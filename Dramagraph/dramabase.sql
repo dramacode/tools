@@ -27,8 +27,11 @@ CREATE TABLE act (
   n       INTEGER, -- numéro d’ordre
   sp      INTEGER, -- <sp> taille en répliques
   l       INTEGER, -- <l> taille en vers
+  ln      INTEGER, -- numéro du premier vers
   w       INTEGER, -- <w> (word) taille en mots
+  wn      INTEGER, -- numéro du premier mot
   c       INTEGER, -- <c> (char) taille en caractères
+  cn      INTEGER, -- numéro du premier caractère
   PRIMARY KEY(id ASC)
 );
 CREATE UNIQUE INDEX act_code ON act(play, code);
@@ -42,12 +45,15 @@ CREATE TABLE scene (
   n       INTEGER, -- numéro d’ordre
   sp      INTEGER, -- <sp> taille en répliques
   l       INTEGER, -- <l> taille en vers
+  ln      INTEGER, -- numéro du premier vers
   w       INTEGER, -- <w> (word) taille en mots
+  wn      INTEGER, -- numéro du premier mot
   c       INTEGER, -- <c> (char) taille en caractères
+  cn      INTEGER, -- numéro du premier caractère
   PRIMARY KEY(id ASC)
 );
 CREATE UNIQUE INDEX scene_code ON scene(play, code);
-CREATE UNIQUE INDEX scene_act ON scene(play, act);
+CREATE INDEX scene_act ON scene(play, act);
 
 CREATE TABLE role (
   -- un rôle
@@ -80,14 +86,20 @@ CREATE TABLE sp (
   source       TEXT,    -- code de personnage
   target       TEXT,    -- code de personnage
   l            INTEGER, -- <l> nombre de vers
+  ln           INTEGER, -- numéro du premier vers
   w            INTEGER, -- <w> nombre de mots
+  wn           INTEGER, -- numéro du premier mot
   c            INTEGER, -- <c> nombre de caractères
+  cn           INTEGER, -- numéro du premier caractère
   text         TEXT,    -- texte, pour récup ultérieure ?
   PRIMARY KEY(id ASC)
 );
 CREATE UNIQUE INDEX sp_path ON sp(play, act, scene, code);
 CREATE INDEX sp_source ON sp(play, source, target);
 CREATE INDEX sp_target ON sp(play, target, source);
+CREATE UNIQUE INDEX sp_cn ON sp(play, cn);
+CREATE UNIQUE INDEX sp_wn ON sp(play, wn);
+CREATE INDEX sp_ln ON sp(play, ln);
 
 CREATE TRIGGER playDel
   -- si on supprime une pièce, supprimer la cascade qui en dépend

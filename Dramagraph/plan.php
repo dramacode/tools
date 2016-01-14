@@ -43,5 +43,6 @@ echo "</select>\n";
       <?php
 $base->timebars($play, $width);
       ?>
+
   </body>
 </html>

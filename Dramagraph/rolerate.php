@@ -9,8 +9,7 @@ $width = @$_REQUEST['width'];
 <html>
   <head>
     <meta charset="UTF-8"/>
-    <title>Dramabars</title>
-    <link rel="stylesheet" charset="utf-8" type="text/css" href="../../Teinte/tei2html.css"/>
+    <title>Dramagraphie, proporion des rôles</title>
     <style>
 html, body { height: 100%; margin-top:0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
     </style>

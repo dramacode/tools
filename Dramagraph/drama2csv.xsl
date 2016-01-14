@@ -32,6 +32,8 @@ Ramasser des informations chiffrées d’une pièce
     <xsl:value-of select="$tab"/>
     <xsl:text>l</xsl:text>
     <xsl:value-of select="$tab"/>
+    <xsl:text>ln</xsl:text>
+    <xsl:value-of select="$tab"/>
     <xsl:text>w</xsl:text>
     <xsl:value-of select="$tab"/>
     <xsl:text>c</xsl:text>
@@ -132,7 +134,13 @@ Ramasser des informations chiffrées d’une pièce
         </xsl:choose>
         <xsl:value-of select="$tab"/>
         <!-- verses -->
+        <xsl:variable name="countl" select="count(.//tei:l)"/>
+        <xsl:if test="$countl &gt; 0">
+          <xsl:value-of select="$countl"/>
+        </xsl:if>
         <xsl:value-of select="count(.//tei:l)"/>
+        <xsl:value-of select="$tab"/>
+        <xsl:value-of select="(.//tei:l)[1]/@n"/>
         <xsl:value-of select="$tab"/>
         <xsl:variable name="txt">
           <xsl:apply-templates select="*" mode="txt"/>

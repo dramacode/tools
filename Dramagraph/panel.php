@@ -9,23 +9,28 @@ $width = @$_REQUEST['width'];
 <html>
   <head>
     <meta charset="UTF-8"/>
-    <title>Dramabrowse</title>
-    <link rel="stylesheet" charset="utf-8" type="text/css" href="../../Teinte/tei2html.css"/>
+    <title>Dramacode, pièce</title>
+    <link rel="stylesheet" charset="utf-8" type="text/css" href="//dramacode.github.io/Teinte/tei2html.css"/>
+    <script src="../sigma/sigma.min.js">//</script>
+    <script src="../sigma/sigma.layout.forceAtlas2.min.js">//</script>
+    <script src="../sigma/sigma.plugins.dragNodes.min.js">//</script>
+    <script src="../sigma/sigma.exporters.image.min.js">//</script>
+    <script src="Dramanet.js">//</script>
     <style>
 html, body { height: 100%; margin-top:0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
     </style>
   </head>
   <body>
-    <div style="margin-left: auto; margin-right: auto; max-width: 120ex; ">
-      <div style="position:fixed; height: 100%; overflow-y: auto; width: 13em;">
+    <div style="margin-left: auto; margin-right: auto; max-width: 120ex; position: relative; ">
+      <div class="pannel" style="position:fixed; height: 100%; overflow-y: auto; overflow-x: hidden ; width: 270px;">
     <?php
-  $base->timepanel($play, 800);
+  $base->panel($play, 270, 800);
         ?>
         <p> </p>
       </div>
-      <div style=" margin-left: 15em; ">
-        <form name="net" style="position: fixed; top:0;">
-          <?php
+      <div style=" margin-left: 270px; background: #FFFFFF; padding: 1em 3em 3em 3em; position: relative; ">
+          <form name="net" style="position: fixed; top:0; background: #FFFFFF; z-index: 5;" action="#">
+            <?php
 
 echo '<select name="play" onchange="this.form.submit()">'."\n";
 foreach ($base->pdo->query("SELECT * FROM play ORDER BY code") as $row) {
@@ -42,17 +47,23 @@ echo "</select>\n";
 
 
           ?>
-          <a href="#">▲</a>
-      </form>
+            <a href="#" class="but">▲</a>
+          </form>
+        <div id="graph" style="height: 600px; position: relative;">
+
+          <div style="position: absolute; bottom: 0; right: 0; z-index: 2; ">
+            <button class="mix but" type="button" title="Mélanger le graphe">♻</button>
+            <button class="grav but" type="button" title="Démarrer ou arrêter la gravité">►</button>
+          </div>
+        </div>
       <?php 
-$dom = new DOMDocument();
-$dom->load('../../dramacode.github.io/html/'.$play.'.html');
-$xpath = new DOMXPath($dom);
-$article = $xpath->query('//*[@id="article"]');
-$article = $article->item(0);
-echo $dom->saveXML($article);
+include('../plays/'.$play.'.html');
        ?>
       </div>
+      <script>
+var data = <?php $base->sigma($play); ?>;
+var graph1 = new Dramanet("graph", data, "../sigma/worker.js"); // 
+      </script>
     </div>
   </body>
 </html>

@@ -1,6 +1,12 @@
 ;(function() {
   'use strict';
   
+  if ("onhashchange" in window) {
+    window.addEventListener("hashchange", function() {
+      window.scrollBy(0, -60);
+    }, false);
+    
+  };
    /**
    * Return the coordinates of the two control points for a self loop (i.e.
    * where the start point is also the end point) computed as a cubic bezier
@@ -147,8 +153,8 @@
         type: 'canvas'
       },
       settings: {
-        defaultEdgeColor: "rgba(240, 240, 240, 0.5)",
-        defaultNodeColor: "rgba(240, 240, 240, 0.7)",
+        defaultEdgeColor: "rgba(230, 230, 230, 0.5)",
+        defaultNodeColor: "rgba(230, 230, 230, 0.7)",
         edgeColor: "default",
         drawLabels: true,
         defaultLabelSize: 18,
@@ -159,8 +165,9 @@
         */
         // labelAlignment: 'center', // linkurous only and not compatible with drag node
         sideMargin: 2,
-        maxNodeSize: 40,
-        maxEdgeSize: 30,
+        maxNodeSize: 20,
+        minEdgeSize: 1,
+        maxEdgeSize: 20,
         minArrowSize: 10,
         minNodeSize: 10,
         borderSize: 2,
