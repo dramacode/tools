@@ -1,6 +1,6 @@
 <?php
-if (isset($_REQUEST['play'])) $play = $_REQUEST['play'];
-else $play = 'moliere_tartuffe';
+if (isset($_REQUEST['play'])) $playcode = $_REQUEST['play'];
+else $playcode = 'moliere_tartuffe';
 include('Dramabase.php');
 $base = new Dramabase('basedrama.sqlite');
 
@@ -33,16 +33,10 @@ button { cursor: pointer; border: none; padding: 0; font-size: 20px; font-family
       <form name="net" style="position: absolute; z-index: 2; ">
         <select name="play" onchange="this.form.submit()">
           <?php
-echo '<option></option>';
-foreach ($base->pdo->query("SELECT * FROM play ORDER BY code") as $row) {
-  if ($row['code'] == $play) $selected=' selected="selected"';
+foreach ($base->pdo->query("SELECT * FROM play ORDER BY author, year") as $play) {
+  if ($play['code'] == $playcode) $selected=' selected="selected"';
   else $selected = "";
-  echo '<option value="'.$row['code'].'"'.$selected.'>'.$row['author'].', '.$row['title'].' (';
-  echo $row['year'].', ';
-  if ($row['genre'] == 'tragedy') echo 'tragédie, ';
-  if ($row['genre'] == 'comedy') echo 'comédie, ';
-  echo $row['acts'].(($row['acts']>2)?" actes":" acte").(($row['verse'])?", vers":", prose").")";
-  echo "</option>\n";
+  echo '<option value="'.$play['code'].'"'.$selected.'>'.$base->bibl($play)."</option>\n";
 }
           ?>
         </select>
@@ -61,7 +55,7 @@ foreach ($base->pdo->query("SELECT * FROM play ORDER BY code") as $row) {
       -->
     </div>
     <script>
-var data = <?php $base->sigma($play); ?>;
+var data = <?php $base->sigma($playcode); ?>;
 var graph1 = new Dramanet("container", data, "../sigma/worker.js"); // 
     </script>
   </body>

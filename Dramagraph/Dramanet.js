@@ -19,10 +19,10 @@
    */
   sigma.utils.dramaSelf = function(x , y, size) {
     return {
-      x1: x - size * 3,
+      x1: x - size * 5,
       y1: y,
       x2: x,
-      y2: y + size * 3
+      y2: y + size * 5
     };
   };
  /**
@@ -89,7 +89,7 @@
     // self loop, no arrow needed
     if (source.id === target.id) {
       context.strokeStyle = color;
-      context.lineWidth = size;
+      context.lineWidth = size / 2;
       context.beginPath();
       context.moveTo(sX, sY);
       cp = sigma.utils.dramaSelf(sX, sY, tSize);
@@ -98,7 +98,7 @@
     }
     // target edge, arrow
     else {
-      aSize = Math.max(size * 2.5, settings('minArrowSize')),
+      aSize = Math.max(size * 1.5, settings('minArrowSize')),
       d = Math.sqrt(Math.pow(tX - sX, 2) + Math.pow(tY - sY, 2)),
       // start line from outside the source node
       oX = sX + (tX - sX) * (0.9*source[prefix + 'size'] / d),
@@ -153,7 +153,7 @@
         type: 'canvas'
       },
       settings: {
-        defaultEdgeColor: "rgba(230, 230, 230, 0.5)",
+        defaultEdgeColor: "rgba(230, 240, 240, 0.8)",
         defaultNodeColor: "rgba(230, 230, 230, 0.7)",
         edgeColor: "default",
         drawLabels: true,
@@ -167,8 +167,9 @@
         sideMargin: 2,
         maxNodeSize: 20,
         minEdgeSize: 1,
-        maxEdgeSize: 20,
-        minArrowSize: 10,
+        maxEdgeSize: 30,
+        minArrowSize: 15,
+        maxArrowSize: 20,
         minNodeSize: 10,
         borderSize: 2,
         outerBorderSize: 3, // stroke size of active nodes
@@ -205,7 +206,7 @@
     var pars = {
       // slowDown: 1,
       // adjustSizes: true, // non, ralentit tout
-      // outboundAttractionDistribution: true, // non, éloigne Phèdre d’Œnone
+      // outboundAttractionDistribution: true, // non, inertie, ralentit tout
       // edgeWeightInfluence: 1, // ralentit tout, impossible de ramener Phèdre à Œnone
       // barnesHutOptimize: false, // ?
       // barnesHutTheta: 0.1,  // pas d’effet apparent sur si petit graphe

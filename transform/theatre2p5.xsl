@@ -62,7 +62,7 @@
                 <xsl:when test="$genre = 'Comédie'">
                   <xsl:attribute name="subtype">comedy</xsl:attribute>
                 </xsl:when>
-                <xsl:when test="$genre = 'Tragedy'">
+                <xsl:when test="$genre = 'Tragédie'">
                   <xsl:attribute name="subtype">tragedy</xsl:attribute>
                 </xsl:when>
               </xsl:choose>

@@ -1,6 +1,6 @@
 <?php
-if (isset($_REQUEST['play'])) $play = $_REQUEST['play'];
-else $play = 'moliere_tartuffe';
+if (isset($_REQUEST['play'])) $playcode = $_REQUEST['play'];
+else $playcode = 'racine_phedre';
 include('Dramabase.php');
 $base = new Dramabase('basedrama.sqlite');
 $width = @$_REQUEST['width'];
@@ -19,15 +19,10 @@ html, body { height: 100%; margin-top:0; margin-bottom: 0; padding-top: 0; paddi
           <?php
 
 echo '<select name="play" onchange="this.form.submit()">'."\n";
-foreach ($base->pdo->query("SELECT * FROM play ORDER BY code") as $row) {
-  if ($row['code'] == $play) $selected=' selected="selected"';
+foreach ($base->pdo->query("SELECT * FROM play ORDER BY author, year") as $play) {
+  if ($play['code'] == $playcode) $selected=' selected="selected"';
   else $selected = "";
-  echo '<option value="'.$row['code'].'"'.$selected.'>'.$row['author'].', '.$row['title'].' (';
-  if ($row['year']) echo $row['year'].', ';
-  if ($row['genre'] == 'tragedy') echo 'tragédie, ';
-  if ($row['genre'] == 'comedy') echo 'comédie, ';
-  echo $row['acts'].(($row['acts']>2)?" actes":" acte").(($row['verse'])?", vers":", prose").")";
-  echo "</option>\n";
+  echo '<option value="'.$play['code'].'"'.$selected.'>'.$base->bibl($play)."</option>\n";
 }
 echo "</select>\n";
 
@@ -35,7 +30,7 @@ echo '<select title="Largeur de référence de la bande temporelle" name="width"
 foreach (array(200, 300, 400, 500, 600, 800, 1000, 1100, 1200, 1400) as $key=>$value) {
   echo '<option';
   if ($value == $width) echo ' selected="selected"';
-  if (!is_numeric($key)) echo ' value="'.$key.'"';
+  // if (!is_numeric($key)) echo ' value="'.$key.'"';
   echo ">$value</option>\n";
 }
 echo "</select>\n";
@@ -43,6 +38,7 @@ echo "</select>\n";
           ?>  
       </form>
     <p/>
-    <?php $base->rolerate($play, $width); ?>
+    <?php
+    $base->rolerate($playcode, $width); ?>
   </body>
 </html>

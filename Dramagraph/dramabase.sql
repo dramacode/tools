@@ -23,6 +23,7 @@ CREATE TABLE act (
   -- un acte
   id      INTEGER, -- rowid auto
   play    TEXT,    -- code pièce
+  type    TEXT,    -- type d’acte (prologue, interlude…)
   code    TEXT,    -- code acte
   n       INTEGER, -- numéro d’ordre
   sp      INTEGER, -- <sp> taille en répliques
