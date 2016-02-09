@@ -18,18 +18,17 @@
   </xsl:template>
   <xsl:template match="tei:note"/>
   <xsl:template match="tei:body/tei:div | tei:body/tei:div1">
-    <div1>
+    <div>
       <xsl:attribute name="xml:id">
         <xsl:number format="I"/>
       </xsl:attribute>
       <!-- recouvrir les identifiants calculés par l’identifiant inscrit -->
-      <xsl:apply-templates select="@*"/>
+      <xsl:copy-of select="@*"/>
       <xsl:apply-templates/>
-    </div1>
+    </div>
   </xsl:template>
   <xsl:template match="tei:body/tei:div/tei:div | tei:body/tei:div1/tei:div2">
-    <div2>
-      <xsl:apply-templates select="@*"/>
+    <div>
       <xsl:attribute name="type">scene</xsl:attribute>
       <xsl:attribute name="xml:id">
         <xsl:choose>
@@ -42,12 +41,12 @@
         </xsl:choose>
         <xsl:number format="01"/>
       </xsl:attribute>
+      <xsl:copy-of select="@*"/>
       <xsl:apply-templates/>
-    </div2>
+    </div>
   </xsl:template>
   <xsl:template match="tei:sp">
     <xsl:copy>
-      <xsl:apply-templates select="@*"/>
       <xsl:attribute name="xml:id">
         <xsl:choose>
           <xsl:when test="parent::*/parent::*[@xml:id]">
@@ -61,6 +60,7 @@
         <xsl:text>-</xsl:text>
         <xsl:number count="tei:sp"/>
       </xsl:attribute>
+      <xsl:copy-of select="@*"/>
       <xsl:apply-templates/>
     </xsl:copy>
   </xsl:template>
@@ -77,7 +77,6 @@
 
   <xsl:template match="tei:l[ancestor::tei:body]">
     <xsl:copy>
-      <xsl:copy-of select="@rend|@part"/>
       <xsl:variable name="n">
         <xsl:number count="tei:l[not(@part) or @part='I' or @part='i']" from="tei:body" level="any"/>
       </xsl:variable>
@@ -90,6 +89,7 @@
           <xsl:value-of select="$n"/>
         </xsl:attribute>
       </xsl:if>
+      <xsl:copy-of select="@*"/>
       <xsl:apply-templates/>
     </xsl:copy>
   </xsl:template>
