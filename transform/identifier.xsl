@@ -10,71 +10,96 @@
   <xsl:variable name="abc">abcdefghijklmnopqrstuvwxyzàáâãäåçèéêëìíîïñòóôõöùúûüý</xsl:variable>
   <xsl:key name="sp" match="tei:sp" use="@who"/>
   <!-- Lister les rôles en tête, pour des listes par scènes -->
-  <xsl:key name="role" match="tei:front//tei:role" use="'all'"/>
+  <xsl:key name="who" match="tei:role|tei:person" use="@xml:id"/>
   <xsl:template match="node()|@*">
     <xsl:copy>
       <xsl:apply-templates select="@*|node()"/>
     </xsl:copy>
   </xsl:template>
-  <xsl:template match="tei:note"/>
   <xsl:template match="tei:body/tei:div | tei:body/tei:div1">
     <div>
+      <!-- Identifiant d’acte, repris ou construit -->
+       <xsl:variable name="act">
+        <xsl:choose>
+          <xsl:when test="@xml:id">
+            <xsl:value-of select="@xml:id"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:number format="I"/>
+          </xsl:otherwise>
+        </xsl:choose>  
+      </xsl:variable>     
       <xsl:attribute name="xml:id">
-        <xsl:number format="I"/>
+        <xsl:value-of select="$act"/>
       </xsl:attribute>
-      <!-- recouvrir les identifiants calculés par l’identifiant inscrit -->
-      <xsl:copy-of select="@*"/>
-      <xsl:apply-templates/>
+     <!-- toujours garder l’existant, si quelqu’un veut le changer avec cette XSL, le supprimer avant -->
+     <xsl:copy-of select="@*"/>
+      <xsl:apply-templates>
+        <xsl:with-param name="act" select="$act"/>
+      </xsl:apply-templates>
     </div>
   </xsl:template>
   <xsl:template match="tei:body/tei:div/tei:div | tei:body/tei:div1/tei:div2">
+    <xsl:param name="act"/>
     <div>
       <xsl:attribute name="type">scene</xsl:attribute>
-      <xsl:attribute name="xml:id">
+      <!-- Identifiant de scène, repris ou construit -->
+      <xsl:variable name="scene">
         <xsl:choose>
-          <xsl:when test="parent::*[@xml:id]">
-            <xsl:value-of select="parent::*[@xml:id]/@xml:id"/>
+          <xsl:when test="@xml:id">
+            <xsl:value-of select="@xml:id"/>
           </xsl:when>
           <xsl:otherwise>
-            <xsl:number count="tei:body/tei:div | tei:body/tei:div1" format="I"/>
+            <xsl:value-of select="$act"/>
+            <xsl:number format="01"/>
           </xsl:otherwise>
-        </xsl:choose>
-        <xsl:number format="01"/>
+        </xsl:choose>  
+      </xsl:variable>       
+      <xsl:attribute name="xml:id">
+        <xsl:value-of select="$scene"/>
       </xsl:attribute>
+      <!-- L’existant prime sur le généré -->
       <xsl:copy-of select="@*"/>
-      <xsl:apply-templates/>
+      <xsl:apply-templates>
+        <xsl:with-param name="scene" select="$scene"/>
+      </xsl:apply-templates>
     </div>
   </xsl:template>
   <xsl:template match="tei:sp">
+    <xsl:param name="scene"/>
     <xsl:copy>
-      <xsl:attribute name="xml:id">
+      <!-- Identifiant de réplique, repris ou construit -->
+      <xsl:variable name="id">
         <xsl:choose>
-          <xsl:when test="parent::*/parent::*[@xml:id]">
-            <xsl:value-of select="parent::*/parent::*[@xml:id]/@xml:id"/>
+          <xsl:when test="@xml:id">
+            <xsl:value-of select="@xml:id"/>
           </xsl:when>
           <xsl:otherwise>
-           <xsl:number count="tei:body/tei:div | tei:body/tei:div1" format="I"/>
+            <xsl:value-of select="$scene"/>
+            <xsl:text>-</xsl:text>
+            <xsl:number count="tei:sp"/>
           </xsl:otherwise>
-        </xsl:choose>
-        <xsl:number count="tei:body/tei:div/tei:div | tei:body/tei:div1/tei:div2" format="01"/>
-        <xsl:text>-</xsl:text>
-        <xsl:number count="tei:sp"/>
+        </xsl:choose>  
+      </xsl:variable>     
+      <xsl:attribute name="xml:id">
+        <xsl:value-of select="$id"/>
       </xsl:attribute>
       <xsl:copy-of select="@*"/>
+      <!-- Tester au moins le premier who -->
+      <xsl:variable name="who1" select="substring-before(concat(@who, ' '), ' ')"/>
+      <xsl:choose>
+        <xsl:when test="not(@who)">
+          <xsl:message>#<xsl:value-of select="$id"/> sp/@who ?</xsl:message>
+        </xsl:when>
+        <xsl:when test="not(key('who', $who1))">
+          <xsl:message>#<xsl:value-of select="$id"/>, "<xsl:value-of select="@who"/>", pas de @xml:id pour ce rôle</xsl:message>
+        </xsl:when>
+      </xsl:choose>
       <xsl:apply-templates/>
     </xsl:copy>
   </xsl:template>
-  <!-- Normalisation -->
-  <!--
-  <xsl:template match="tei:speaker/text()">
-    <xsl:value-of select="translate(., $ABC, $abc)"/>
-  </xsl:template>
-  -->
-  <xsl:template match="tei:p[.='']"/>
-  <xsl:template match="tei:pb"/>
-  <xsl:template match="tei:space"/>
-  <!-- vers numérotation OK -->
-
+  <!-- Numérotation des vers, le process suppose ici que tous les vers dits sont dans le <body>, s’il y en 
+  a en <front>, ce sont des vers cités dans l’instroduction critique (cf. Bibliothèque dramatique) -->
   <xsl:template match="tei:l[ancestor::tei:body]">
     <xsl:copy>
       <xsl:variable name="n">
