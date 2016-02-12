@@ -9,7 +9,7 @@ set_time_limit(-1);
 if (isset($_SERVER['SCRIPT_FILENAME']) && basename($_SERVER['SCRIPT_FILENAME']) != basename(__FILE__));
 else if (isset($_SERVER['ORIG_SCRIPT_FILENAME']) && realpath($_SERVER['ORIG_SCRIPT_FILENAME']) != realpath(__FILE__));
 // direct command line call, work
-else if (php_sapi_name() == "cli") Transform::doCli();
+else if (php_sapi_name() == "cli") Transform::cli();
 /**
  * Class adhoc pour générer un docx à partir d’un XML/TEI
  */
@@ -29,9 +29,10 @@ class Transform {
     '@\s+</(head|s|stage)>@u' => '',
     '@([A-ZÇÂÉÈËÎÏŒ])\.</(speaker|head)>@u' => '$1</$2>',
   );
-  static function doCli() {
-    $flist=array("docx"=>"", "fix"=>"", "p5"=>"", "txt"=>"");
+  static function cli() {
     array_shift($_SERVER['argv']); // shift first arg, the script filepath
+    /*
+    $flist=array("docx"=>"", "fix"=>"", "p5"=>"", "txt"=>"");
     if (!count($_SERVER['argv'])) exit('
 usage    : php -f Transform.php (' . implode('|', array_keys($flist)) . ') tei.xml
     ');
@@ -40,21 +41,28 @@ usage    : php -f Transform.php (' . implode('|', array_keys($flist)) . ') tei.x
 format should one of : p5 txt docx
     ');
     if (!count($_SERVER['argv'])) exit('
-A filepath (or a glob) is needed for transform      
+A filepath (or a glob) is needed for transform
     ');
-    foreach (glob(array_shift($_SERVER['argv'])) as $src) {
-      $destname=dirname($src).'/'.pathinfo($src, PATHINFO_FILENAME);
-
-      if ($format == 'p5') {
-        self::teip5($src);
-      }
-      else if ($format == 'fix') {
-        $dom = self::dom($src);
-        $xml=self::xsl(dirname(__FILE__).'/fix.xsl', $dom);
-        file_put_contents($src, $xml);
+    */
+    $xsl = new DOMDocument("1.0", "UTF-8");
+    $xsl->load(dirname(__FILE__).'/part.xsl');
+    $proc = new XSLTProcessor();
+    $proc->importStyleSheet($xsl);
+    // appliquer une transformation comme filtre
+    $i = 0;
+    foreach ($_SERVER['argv'] as $glob) {
+      foreach(glob($glob) as $srcfile) {
+        $i++;
+        echo $i.'. '.$srcfile."\n";
+        $xml = file_get_contents($srcfile);
+        $xml = preg_replace(
+          array('@<l part="Y">[  ]+@u', '@[  ]+<pb@u'),
+          array('<l part="Y">',         '<pb'),
+          $xml);
+        $dom = self::dom(null, $xml);
+        $proc->transformToUri($dom, $srcfile);
       }
     }
-
   }
   static function dom($src, $xml="") {
     $dom = new DOMDocument("1.0", "UTF-8");
@@ -85,16 +93,7 @@ A filepath (or a glob) is needed for transform
     // file_put_contents(dirname($src).'/'.pathinfo($src, PATHINFO_FILENAME).'docx.xml', $document );
     self::insert($dest, $document, $footnotes);
   }
-  /**
-   * Insérer un nouveau document dans un template
-   */
-  static function insert($docx, $document, $footnotes=null) {
-    $zip = new ZipArchive;
-    $zip->open($docx);
-    $zip->addFromString('word/document.xml', $document);
-    if ($footnotes) $zip->addFromString('word/footnotes.xml', $footnotes);
-    $zip->close();
-  }
+
   /**
    * Transformation xsl
    */

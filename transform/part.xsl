@@ -30,4 +30,5 @@
       <xsl:apply-templates/>
     </xsl:copy>
   </xsl:template>
+  <xsl:template match="tei:l/tei:space"/>
 </xsl:transform>
