@@ -26,6 +26,9 @@
         <xsl:when test="not(@part) and $next/@part = 'Y'">
           <xsl:attribute name="part">I</xsl:attribute>
         </xsl:when>
+        <xsl:when test="not(@part) and $next/@part = 'F'">
+          <xsl:attribute name="part">I</xsl:attribute>
+        </xsl:when>
       </xsl:choose>
       <xsl:apply-templates/>
     </xsl:copy>
