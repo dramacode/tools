@@ -2,6 +2,7 @@
 <xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.1" xmlns="http://www.tei-c.org/ns/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" exclude-result-prefixes="tei">
   <xsl:strip-space elements="tei:TEI tei:TEI.2 tei:body tei:castList tei:div tei:div1 tei:div2  tei:docDate tei:docImprint tei:docTitle tei:fileDesc tei:front tei:group tei:index tei:listWit tei:p tei:publicationStmp tei:publicationStmt tei:sourceDesc tei:SourceDesc tei:sources tei:sp tei:text tei:teiHeader tei:text tei:titleStmt"/>
   <xsl:output method="xml" encoding="UTF-8" indent="yes"/>
+  <xsl:variable name="lf" select="'&#10;'"/>
   <xsl:variable name="UC"
     >ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑŒÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöùúûüýœ’' </xsl:variable>
   <xsl:variable name="lc"
@@ -22,36 +23,39 @@
   </xsl:template>
   <xsl:template match="/*">
     <xsl:processing-instruction name="xml-stylesheet">type="text/xsl" href="../Teinte/tei2html.xsl"</xsl:processing-instruction>
+    <xsl:value-of select="$lf"/>
+    <xsl:processing-instruction name="xml-model">href="http://oeuvres.github.io/Teinte/teinte.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"</xsl:processing-instruction>
+    <xsl:processing-instruction name="xml-model">href="http://oeuvres.github.io/Teinte/teinte.sch" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"</xsl:processing-instruction>
+    <xsl:value-of select="$lf"/>
     <xsl:copy>
       <xsl:apply-templates select="@*"/>
       <xsl:apply-templates/>
     </xsl:copy>
   </xsl:template>
-  <!--
   <xsl:template match="tei:teiHeader">
     <xsl:copy>
       <xsl:apply-templates/>
       <profileDesc>
         <creation>
-          <date>
-            <xsl:attribute name="when">
-              <xsl:choose>
-                <xsl:when test="/*/tei:teiHeader/tei:profileDesc/tei:creation/tei:date/@when">
-                  <xsl:value-of select="/*/tei:teiHeader/tei:profileDesc/tei:creation/tei:date/@when"/>
-                </xsl:when>
-                <xsl:when test="/*/tei:text/tei:front/tei:performance/tei:premiere/@date">
-                  <xsl:value-of select="substring( normalize-space(/*/tei:text/tei:front/tei:performance/tei:premiere/@date), 1, 4)"/>
-                </xsl:when>
-                <xsl:when test="/*/tei:text/tei:front/tei:docDate/@value">
-                  <xsl:value-of select="substring( normalize-space(/*/tei:text/tei:front/tei:docDate/@value), 1, 4)"/>
-                </xsl:when>
-                <xsl:when test="/*/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:date">
-                  <xsl:value-of select="substring( normalize-space(/*/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:date), 1, 4)"/>
-                </xsl:when>
-                <xsl:otherwise>0000</xsl:otherwise>
-              </xsl:choose>
-            </xsl:attribute>
-          </date>
+          <xsl:variable name="published">
+            <xsl:choose>
+              <xsl:when test="/*/tei:teiHeader/tei:profileDesc/tei:creation/tei:date/@when">
+                <xsl:value-of select="/*/tei:teiHeader/tei:profileDesc/tei:creation/tei:date/@when"/>
+              </xsl:when>
+              <xsl:when test="/*/tei:text/tei:front/tei:docDate/@value">
+                <xsl:value-of select="normalize-space(/*/tei:text/tei:front/tei:docDate/@value)"/>
+              </xsl:when>
+              <xsl:when test="/*/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:date">
+                <xsl:value-of select=" normalize-space(/*/tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:date)"/>
+              </xsl:when>
+            </xsl:choose>
+          </xsl:variable>
+          <xsl:if test="$published != ''">
+            <date type="published" when="{$published}"/>
+          </xsl:if>
+          <xsl:if test="/*/tei:text/tei:front/tei:performance/tei:premiere/@date">
+            <date type="performed" when="{/*/tei:text/tei:front/tei:performance/tei:premiere/@date}"/>
+          </xsl:if>
         </creation>
         <langUsage>
           <language ident="fr"/>
@@ -80,16 +84,10 @@
   <xsl:template match="tei:SourceDesc">
     <sourceDesc>
       <xsl:apply-templates select="@*"/>
-      <p>
-        <xsl:if test="tei:permalien != ''">
-          <ref target="{normalize-space(tei:permalien)}">
-            <xsl:value-of select="normalize-space(tei:permalien)"/>
-          </ref>
-        </xsl:if>
-      </p>
+      <xsl:apply-templates/>
     </sourceDesc>
   </xsl:template>
-  -->
+
   <xsl:template match="tei:publicationStmp">
     <publicationStmt>
       <xsl:apply-templates select="@*"/>
@@ -97,7 +95,7 @@
     </publicationStmt>
   </xsl:template>
   <xsl:template match="tei:body/tei:div | tei:body/tei:div1">
-    <div>
+    <div1>
       <!-- Identifiant d’acte, repris ou construit -->
       <xsl:variable name="act">
         <xsl:choose>
@@ -114,14 +112,17 @@
       </xsl:attribute>
       <!-- toujours garder l’existant, si quelqu’un veut le changer avec cette XSL, le supprimer avant -->
       <xsl:copy-of select="@*"/>
+      <xsl:if test="@type='acte'">
+        <xsl:attribute name="type">act</xsl:attribute>        
+      </xsl:if>
       <xsl:apply-templates>
         <xsl:with-param name="act" select="$act"/>
       </xsl:apply-templates>
-    </div>
+    </div1>
   </xsl:template>
   <xsl:template match="tei:body/tei:div/tei:div | tei:body/tei:div1/tei:div2">
     <xsl:param name="act"/>
-    <div>
+    <div2>
       <!-- Identifiant de scène, repris ou construit -->
       <xsl:variable name="scene">
         <xsl:choose>
@@ -145,7 +146,7 @@
       <xsl:apply-templates>
         <xsl:with-param name="scene" select="$scene"/>
       </xsl:apply-templates>
-    </div>
+    </div2>
   </xsl:template>
   
   <xsl:template match="tei:sp">
@@ -200,23 +201,13 @@
           <xsl:value-of select="translate( ., $who1, $who2)"/>
         </xsl:attribute>
       </xsl:if>
-      <xsl:copy-of select="@xml:id"/>
       <xsl:if test="normalize-space($rend) != ''">
         <xsl:attribute name="rend">
           <xsl:value-of select="normalize-space($rend)"/>
         </xsl:attribute>
       </xsl:if>
-      <xsl:copy-of select="@rend"/>
-      <xsl:choose>
-        <!-- Rôle en minuscules ou petites caps -->
-        <xsl:when test="not(*)">
-          <xsl:value-of select="substring(., 1, 1)"/>
-          <xsl:value-of select="translate(substring(., 2), $ABC, $abc)"/>
-        </xsl:when>
-        <xsl:otherwise>
-          <xsl:apply-templates/>
-        </xsl:otherwise>
-      </xsl:choose>
+      <xsl:copy-of select="@*"/>
+      <xsl:apply-templates/>
     </xsl:copy>
   </xsl:template>
   <xsl:template match="@part">
@@ -247,8 +238,6 @@
       <xsl:apply-templates/>
     </l>
   </xsl:template>
-  <!-- Réinsertion des notes en fin de vers suivants -->
-  <xsl:template match="tei:sp/tei:note"/>
   <!-- vers numérotation OK -->
   <xsl:template match="tei:l">
     <xsl:copy>
@@ -267,23 +256,9 @@
       </xsl:choose>
       <xsl:apply-templates select="@part"/>
       <xsl:apply-templates/>
-      <xsl:call-template name="copynote"/>
-    </xsl:copy>    
+    </xsl:copy>
   </xsl:template>
-  <xsl:template match="node()" mode="copynote"/>
-  <xsl:template name="copynote" mode="copynote" match="tei:note">
-    <xsl:if test="local-name(preceding-sibling::*[1]) = 'note'">
-      <xsl:for-each select="preceding-sibling::*[1]">
-        <xsl:apply-templates select="." mode="copynote"/>
-      </xsl:for-each>
-    </xsl:if>
-    <xsl:if test="self::tei:note">
-      <xsl:copy>
-        <xsl:copy-of select="@*"/>
-        <xsl:apply-templates/>
-      </xsl:copy>
-    </xsl:if>
-  </xsl:template>
+
   <xsl:template match="tei:apostrophe | tei:front/tei:argument | tei:dedicace | tei:examen | tei:preface ">
     <div type="{local-name()}">
       <xsl:apply-templates/>
