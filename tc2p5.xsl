@@ -223,9 +223,10 @@
     </xsl:attribute>
   </xsl:template>
   <xsl:template match="tei:pœm|tei:poem">
-    <quote>
+    <lg>
+      <xsl:copy-of select="@*"/>
       <xsl:apply-templates/>
-    </quote>
+    </lg>
   </xsl:template>
   <xsl:template match="tei:bottom">
     <back>
