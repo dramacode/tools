@@ -37,7 +37,10 @@
       <xsl:apply-templates/>
       <profileDesc>
         <creation>
-          <xsl:variable name="published">
+          <xsl:if test="/*/tei:text/tei:front/tei:performance/tei:premiere/@date">
+            <date type="created" when="{/*/tei:text/tei:front/tei:performance/tei:premiere/@date}"/>
+          </xsl:if>
+          <xsl:variable name="issued">
             <xsl:choose>
               <xsl:when test="/*/tei:teiHeader/tei:profileDesc/tei:creation/tei:date/@when">
                 <xsl:value-of select="/*/tei:teiHeader/tei:profileDesc/tei:creation/tei:date/@when"/>
@@ -50,11 +53,8 @@
               </xsl:when>
             </xsl:choose>
           </xsl:variable>
-          <xsl:if test="$published != ''">
-            <date type="published" when="{$published}"/>
-          </xsl:if>
-          <xsl:if test="/*/tei:text/tei:front/tei:performance/tei:premiere/@date">
-            <date type="performed" when="{/*/tei:text/tei:front/tei:performance/tei:premiere/@date}"/>
+          <xsl:if test="$issued != ''">
+            <date type="issued" when="{$issued}"/>
           </xsl:if>
         </creation>
         <langUsage>
@@ -113,7 +113,7 @@
       <!-- toujours garder l’existant, si quelqu’un veut le changer avec cette XSL, le supprimer avant -->
       <xsl:copy-of select="@*"/>
       <xsl:if test="@type='acte'">
-        <xsl:attribute name="type">act</xsl:attribute>        
+        <xsl:attribute name="type">act</xsl:attribute>
       </xsl:if>
       <xsl:apply-templates>
         <xsl:with-param name="act" select="$act"/>
@@ -169,8 +169,13 @@
         <xsl:value-of select="$id"/>
       </xsl:attribute>
       <xsl:copy-of select="@*"/>
-      <!-- Tester au moins le premier who -->
-      <xsl:variable name="who1" select="substring-before(concat(@who, ' '), ' ')"/>
+      <xsl:choose>
+        <xsl:when test="@who">
+          <xsl:attribute name="who">
+            <xsl:value-of select="translate(@who, $who1, $who2)"/>
+          </xsl:attribute>
+        </xsl:when>
+      </xsl:choose>
       <!--
       <xsl:choose>
         <xsl:when test="not(@who)">
@@ -234,7 +239,7 @@
     </back>
   </xsl:template>
   <xsl:template match="tei:p/@type[.='p']"/>
-  <xsl:template match="tei:front//tei:p[@type='v']">
+  <xsl:template match="tei:front//tei:p[@type='v'] | tei:back//tei:p[@type='v']">
     <l>
       <xsl:apply-templates/>
     </l>
