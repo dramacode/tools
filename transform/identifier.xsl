@@ -16,7 +16,7 @@
       <xsl:apply-templates select="@*|node()"/>
     </xsl:copy>
   </xsl:template>
-  <xsl:template match="tei:body/tei:div | tei:body/tei:div1">
+  <xsl:template match="tei:body/tei:div[@type='act'] | tei:body/tei:div1[@type='act']">
     <div>
       <!-- Identifiant d’acte, repris ou construit -->
        <xsl:variable name="act">
@@ -25,7 +25,7 @@
             <xsl:value-of select="@xml:id"/>
           </xsl:when>
           <xsl:otherwise>
-            <xsl:number format="I"/>
+            <xsl:number format="I" count="tei:div[@type='act']|tei:div1[@type='act']"/>
           </xsl:otherwise>
         </xsl:choose>  
       </xsl:variable>     
@@ -39,7 +39,7 @@
       </xsl:apply-templates>
     </div>
   </xsl:template>
-  <xsl:template match="tei:body/tei:div/tei:div | tei:body/tei:div1/tei:div2">
+  <xsl:template match="tei:body/tei:div[@type='act']/tei:div | tei:body/tei:div1[@type='act']/tei:div2">
     <xsl:param name="act"/>
     <div>
       <xsl:attribute name="type">scene</xsl:attribute>
@@ -53,8 +53,8 @@
             <xsl:value-of select="$act"/>
             <xsl:number format="01"/>
           </xsl:otherwise>
-        </xsl:choose>  
-      </xsl:variable>       
+        </xsl:choose>
+      </xsl:variable>
       <xsl:attribute name="xml:id">
         <xsl:value-of select="$scene"/>
       </xsl:attribute>
@@ -65,7 +65,7 @@
       </xsl:apply-templates>
     </div>
   </xsl:template>
-  <xsl:template match="tei:sp">
+  <xsl:template match="tei:sp[ancestor::tei:body]">
     <xsl:param name="scene"/>
     <xsl:copy>
       <!-- Identifiant de réplique, repris ou construit -->
@@ -79,8 +79,8 @@
             <xsl:text>-</xsl:text>
             <xsl:number count="tei:sp"/>
           </xsl:otherwise>
-        </xsl:choose>  
-      </xsl:variable>     
+        </xsl:choose>
+      </xsl:variable>
       <xsl:attribute name="xml:id">
         <xsl:value-of select="$id"/>
       </xsl:attribute>
@@ -103,9 +103,9 @@
   <xsl:template match="tei:l[ancestor::tei:body]">
     <xsl:copy>
       <xsl:variable name="n">
-        <xsl:number count="tei:l[not(@part) or @part='I' or @part='i']" from="tei:body" level="any"/>
+        <xsl:number count="tei:l[(not(@part) or @part='I' or @part='i') and normalize-space(.) != '']" from="tei:body" level="any"/>
       </xsl:variable>
-      <xsl:if test="not(@part) or @part='I' or @part='i'">
+      <xsl:if test="(not(@part) or @part='I' or @part='i') and normalize-space(.) != ''">
         <xsl:attribute name="n">
           <xsl:value-of select="$n"/>
         </xsl:attribute>
