@@ -91,6 +91,7 @@
   <xsl:template match="tei:publicationStmp">
     <publicationStmt>
       <xsl:apply-templates select="@*"/>
+      <publisher>Théâtre Classique</publisher>
       <xsl:apply-templates/>
     </publicationStmt>
   </xsl:template>
