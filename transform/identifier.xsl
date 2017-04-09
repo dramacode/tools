@@ -15,7 +15,7 @@
   <xsl:template match="tei:body/tei:div[@type='act'] | tei:body/tei:div1[@type='act']">
     <xsl:copy>
       <!-- Identifiant d’acte, repris ou construit -->
-      <xsl:variable name="act">
+      <xsl:variable name="id">
         <xsl:choose>
           <xsl:when test="@xml:id">
             <xsl:value-of select="@xml:id"/>
@@ -26,43 +26,43 @@
         </xsl:choose>
       </xsl:variable>
       <xsl:attribute name="xml:id">
-        <xsl:value-of select="$act"/>
+        <xsl:value-of select="$id"/>
       </xsl:attribute>
       <!-- toujours garder l’existant, si quelqu’un veut le changer avec cette XSL, le supprimer avant -->
       <xsl:copy-of select="@*"/>
       <xsl:apply-templates>
-        <xsl:with-param name="act" select="$act"/>
+        <xsl:with-param name="parent" select="$id"/>
       </xsl:apply-templates>
     </xsl:copy>
   </xsl:template>
   <xsl:template match="tei:body/tei:div[@type='act']/tei:div | tei:body/tei:div1[@type='act']/tei:div2">
-    <xsl:param name="act"/>
+    <xsl:param name="parent"/>
     <xsl:copy>
       <xsl:attribute name="type">scene</xsl:attribute>
       <!-- Identifiant de scène, repris ou construit -->
-      <xsl:variable name="scene">
+      <xsl:variable name="id">
         <xsl:choose>
           <xsl:when test="@xml:id">
             <xsl:value-of select="@xml:id"/>
           </xsl:when>
           <xsl:otherwise>
-            <xsl:value-of select="$act"/>
+            <xsl:value-of select="$parent"/>
             <xsl:number format="01"/>
           </xsl:otherwise>
         </xsl:choose>
       </xsl:variable>
       <xsl:attribute name="xml:id">
-        <xsl:value-of select="$scene"/>
+        <xsl:value-of select="$id"/>
       </xsl:attribute>
       <!-- L’existant prime sur le généré -->
       <xsl:copy-of select="@*"/>
       <xsl:apply-templates>
-        <xsl:with-param name="scene" select="$scene"/>
+        <xsl:with-param name="parent" select="$id"/>
       </xsl:apply-templates>
     </xsl:copy>
   </xsl:template>
   <xsl:template match="tei:sp[ancestor::tei:body]">
-    <xsl:param name="scene"/>
+    <xsl:param name="parent"/>
     <xsl:copy>
       <!-- Identifiant de réplique, repris ou construit -->
       <xsl:variable name="id">
@@ -71,7 +71,7 @@
             <xsl:value-of select="@xml:id"/>
           </xsl:when>
           <xsl:otherwise>
-            <xsl:value-of select="$scene"/>
+            <xsl:value-of select="$parent"/>
             <xsl:text>-</xsl:text>
             <xsl:number count="tei:sp"/>
           </xsl:otherwise>
