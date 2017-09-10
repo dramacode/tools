@@ -12,6 +12,17 @@
       <xsl:apply-templates select="@*|node()"/>
     </xsl:copy>
   </xsl:template>
+  <!-- Identification des configurations -->
+  <xsl:template match="tei:listPerson[@type='configuration']">
+    <xsl:copy>
+      <xsl:attribute name="xml:id">
+        <xsl:text>conf</xsl:text>
+        <xsl:number count="tei:listPerson[@type='configuration']" level="any" from="tei:body"/>
+      </xsl:attribute>
+      <xsl:copy-of select="@*"/>
+      <xsl:apply-templates/>
+    </xsl:copy>
+  </xsl:template>
   <xsl:template match="tei:body/tei:div[@type='act'] | tei:body/tei:div1[@type='act']">
     <xsl:copy>
       <!-- Identifiant d’acte, repris ou construit -->
@@ -80,6 +91,7 @@
       <xsl:attribute name="xml:id">
         <xsl:value-of select="$id"/>
       </xsl:attribute>
+      <!-- Les valeurs présentes prennent le dessus -->
       <xsl:copy-of select="@*"/>
       <!-- Tester au moins le premier who -->
       <xsl:variable name="who1" select="substring-before(concat(@who, ' '), ' ')"/>
@@ -110,6 +122,7 @@
           <xsl:value-of select="$n"/>
         </xsl:attribute>
       </xsl:if>
+      <!-- Les valeurs présentes prennent le dessus -->
       <xsl:copy-of select="@*"/>
       <xsl:apply-templates/>
     </xsl:copy>
