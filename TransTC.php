@@ -45,7 +45,7 @@ A filepath (or a glob) is needed for transform
     ');
     */
     $xsl = new DOMDocument("1.0", "UTF-8");
-    $xsl->load(dirname(__FILE__).'/tc2p5.xsl');
+    $xsl->load(dirname(__FILE__).'/transform/tc2p5.xsl');
     $proc = new XSLTProcessor();
     $proc->importStyleSheet($xsl);
     // appliquer une transformation comme filtre

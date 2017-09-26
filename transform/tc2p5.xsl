@@ -266,8 +266,31 @@
     </xsl:copy>
   </xsl:template>
 
+  <xsl:template match="tei:front[tei:docTitle]">
+    <xsl:copy>
+      <xsl:copy-of select="@*"/>
+      <titlePage>
+        <xsl:apply-templates select="*[not(self::tei:div)][not(self::tei:set)][not(self::tei:castList)]"/>
+      </titlePage>
+      <xsl:apply-templates select="tei:div"/>
+      <div xml:id="castList">
+        <xsl:apply-templates select="tei:castList"/>
+        <xsl:apply-templates select="tei:set"/>
+      </div>
+    </xsl:copy>
+  </xsl:template>
+  
+
   <xsl:template match="tei:apostrophe | tei:front/tei:argument | tei:dedicace | tei:examen | tei:preface ">
-    <div type="{local-name()}">
+    <div>
+      <xsl:attribute name="type">
+        <xsl:choose>
+          <xsl:when test="self::tei:dedicace">dedication</xsl:when>
+          <xsl:otherwise>
+            <xsl:value-of select="local-name()"/>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:attribute>
       <xsl:apply-templates/>
     </div>
   </xsl:template>
